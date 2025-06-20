@@ -2,43 +2,70 @@ package agent
 
 import (
 	"math/rand"
+	models "metricapp/internal/model"
+	"metricapp/internal/repository"
 	"runtime"
 )
 
-type MetricCollector struct{}
+type MetricCollector struct {
+	repo repository.Repo
+}
 
-func (mc *MetricCollector) Collect() Metrics {
+func NewCollector() MetricCollector {
+	return MetricCollector{
+		repo: repository.NewInMemoryStorage(),
+	}
+}
+
+func (mc *MetricCollector) collect() {
 	var mStat runtime.MemStats
 	runtime.ReadMemStats(&mStat)
 
-	metrics := newMetrics()
-	metrics.gauges["Alloc"] = float64(mStat.Alloc)
-	metrics.gauges["BuckHashSys"] = float64(mStat.BuckHashSys)
-	metrics.gauges["Frees"] = float64(mStat.Frees)
-	metrics.gauges["GCCPUFraction"] = float64(mStat.GCCPUFraction)
-	metrics.gauges["HeapAlloc"] = float64(mStat.HeapAlloc)
-	metrics.gauges["HeapIdle"] = float64(mStat.HeapIdle)
-	metrics.gauges["HeapInuse"] = float64(mStat.HeapInuse)
-	metrics.gauges["HeapObjects"] = float64(mStat.HeapObjects)
-	metrics.gauges["HeapReleased"] = float64(mStat.HeapReleased)
-	metrics.gauges["HeapSys"] = float64(mStat.HeapSys)
-	metrics.gauges["LastGC"] = float64(mStat.LastGC)
-	metrics.gauges["Lookups"] = float64(mStat.Lookups)
-	metrics.gauges["MCacheInuse"] = float64(mStat.MCacheInuse)
-	metrics.gauges["MCacheSys"] = float64(mStat.MCacheSys)
-	metrics.gauges["MSpanInuse"] = float64(mStat.MSpanInuse)
-	metrics.gauges["MSpanSys"] = float64(mStat.MSpanSys)
-	metrics.gauges["Mallocs"] = float64(mStat.Mallocs)
-	metrics.gauges["NextGC"] = float64(mStat.NextGC)
-	metrics.gauges["NumForcedGC"] = float64(mStat.NumForcedGC)
-	metrics.gauges["NumGC"] = float64(mStat.NumGC)
-	metrics.gauges["OtherSys"] = float64(mStat.OtherSys)
-	metrics.gauges["PauseTotalNs"] = float64(mStat.PauseTotalNs)
-	metrics.gauges["StackInuse"] = float64(mStat.StackInuse)
-	metrics.gauges["StackSys"] = float64(mStat.StackSys)
-	metrics.gauges["Sys"] = float64(mStat.Sys)
-	metrics.gauges["TotalAlloc"] = float64(mStat.TotalAlloc)
-	metrics.gauges["RandomValue"] = float64(rand.Int())
+	mc.repo.SetField("Alloc", addField("Alloc", models.Gauge, mStat.Alloc))
+	mc.repo.SetField("BuckHashSys", addField("BuckHashSys", models.Gauge, mStat.BuckHashSys))
+	mc.repo.SetField("Frees", addField("Frees", models.Gauge, mStat.Frees))
+	mc.repo.SetField("GCCPUFraction", addField("GCCPUFraction", models.Gauge, mStat.GCCPUFraction))
+	mc.repo.SetField("HeapAlloc", addField("HeapAlloc", models.Gauge, mStat.HeapAlloc))
+	mc.repo.SetField("HeapIdle", addField("HeapIdle", models.Gauge, mStat.HeapIdle))
+	mc.repo.SetField("HeapInuse", addField("HeapInuse", models.Gauge, mStat.HeapInuse))
+	mc.repo.SetField("HeapObjects", addField("HeapObjects", models.Gauge, mStat.HeapObjects))
+	mc.repo.SetField("HeapReleased", addField("HeapReleased", models.Gauge, mStat.HeapReleased))
+	mc.repo.SetField("HeapSys", addField("HeapSys", models.Gauge, mStat.HeapSys))
+	mc.repo.SetField("LastGC", addField("LastGC", models.Gauge, mStat.LastGC))
+	mc.repo.SetField("Lookups", addField("Lookups", models.Gauge, mStat.Lookups))
+	mc.repo.SetField("MCacheInuse", addField("MCacheInuse", models.Gauge, mStat.MCacheInuse))
+	mc.repo.SetField("MCacheSys", addField("MCacheSys", models.Gauge, mStat.MCacheSys))
+	mc.repo.SetField("MSpanInuse", addField("MSpanInuse", models.Gauge, mStat.MSpanInuse))
+	mc.repo.SetField("MSpanSys", addField("MSpanSys", models.Gauge, mStat.MSpanSys))
+	mc.repo.SetField("Mallocs", addField("Mallocs", models.Gauge, mStat.Mallocs))
+	mc.repo.SetField("NextGC", addField("NextGC", models.Gauge, mStat.NextGC))
+	mc.repo.SetField("NumForcedGC", addField("NumForcedGC", models.Gauge, mStat.NumForcedGC))
+	mc.repo.SetField("NumGC", addField("NumGC", models.Gauge, mStat.NumGC))
+	mc.repo.SetField("OtherSys", addField("OtherSys", models.Gauge, mStat.OtherSys))
+	mc.repo.SetField("PauseTotalNs", addField("PauseTotalNs", models.Gauge, mStat.PauseTotalNs))
+	mc.repo.SetField("StackInuse", addField("StackInuse", models.Gauge, mStat.StackInuse))
+	mc.repo.SetField("StackSys", addField("StackSys", models.Gauge, mStat.StackSys))
+	mc.repo.SetField("Sys", addField("Sys", models.Gauge, mStat.Sys))
+	mc.repo.SetField("TotalAlloc", addField("TotalAlloc", models.Gauge, mStat.TotalAlloc))
+	mc.repo.SetField("RandomValue", addField("RandomValue", models.Gauge, rand.Int()))
 
-	return metrics
+	mc.repo.IncrementCounter()
+}
+
+func addField(id string, mType string, n any) models.Metrics {
+	newMetric := models.Metrics{
+		ID:    id,
+		MType: mType,
+	}
+
+	switch n.(type) {
+	case float64:
+		newV := n.(float64)
+		newMetric.Value = &newV
+	case int64:
+		newC := n.(int64)
+		newMetric.Delta = &newC
+	}
+
+	return newMetric
 }
