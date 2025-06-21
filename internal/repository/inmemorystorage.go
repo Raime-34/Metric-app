@@ -39,6 +39,7 @@ func (s *InMemoryStorage) IncrementCounter() {
 	pollCounter := s.metrics["PollCounter"]
 	if pollCounter.Delta == nil {
 		var zeroCounter int64
+		pollCounter.MType = models.Counter
 		pollCounter.Delta = &zeroCounter
 	}
 

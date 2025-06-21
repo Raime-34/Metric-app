@@ -46,50 +46,42 @@ func (mc *MetricCollector) collect() {
 	var mStat runtime.MemStats
 	runtime.ReadMemStats(&mStat)
 
-	mc.repo.SetField("Alloc", addField("Alloc", models.Gauge, mStat.Alloc))
-	mc.repo.SetField("BuckHashSys", addField("BuckHashSys", models.Gauge, mStat.BuckHashSys))
-	mc.repo.SetField("Frees", addField("Frees", models.Gauge, mStat.Frees))
-	mc.repo.SetField("GCCPUFraction", addField("GCCPUFraction", models.Gauge, mStat.GCCPUFraction))
-	mc.repo.SetField("HeapAlloc", addField("HeapAlloc", models.Gauge, mStat.HeapAlloc))
-	mc.repo.SetField("HeapIdle", addField("HeapIdle", models.Gauge, mStat.HeapIdle))
-	mc.repo.SetField("HeapInuse", addField("HeapInuse", models.Gauge, mStat.HeapInuse))
-	mc.repo.SetField("HeapObjects", addField("HeapObjects", models.Gauge, mStat.HeapObjects))
-	mc.repo.SetField("HeapReleased", addField("HeapReleased", models.Gauge, mStat.HeapReleased))
-	mc.repo.SetField("HeapSys", addField("HeapSys", models.Gauge, mStat.HeapSys))
-	mc.repo.SetField("LastGC", addField("LastGC", models.Gauge, mStat.LastGC))
-	mc.repo.SetField("Lookups", addField("Lookups", models.Gauge, mStat.Lookups))
-	mc.repo.SetField("MCacheInuse", addField("MCacheInuse", models.Gauge, mStat.MCacheInuse))
-	mc.repo.SetField("MCacheSys", addField("MCacheSys", models.Gauge, mStat.MCacheSys))
-	mc.repo.SetField("MSpanInuse", addField("MSpanInuse", models.Gauge, mStat.MSpanInuse))
-	mc.repo.SetField("MSpanSys", addField("MSpanSys", models.Gauge, mStat.MSpanSys))
-	mc.repo.SetField("Mallocs", addField("Mallocs", models.Gauge, mStat.Mallocs))
-	mc.repo.SetField("NextGC", addField("NextGC", models.Gauge, mStat.NextGC))
-	mc.repo.SetField("NumForcedGC", addField("NumForcedGC", models.Gauge, mStat.NumForcedGC))
-	mc.repo.SetField("NumGC", addField("NumGC", models.Gauge, mStat.NumGC))
-	mc.repo.SetField("OtherSys", addField("OtherSys", models.Gauge, mStat.OtherSys))
-	mc.repo.SetField("PauseTotalNs", addField("PauseTotalNs", models.Gauge, mStat.PauseTotalNs))
-	mc.repo.SetField("StackInuse", addField("StackInuse", models.Gauge, mStat.StackInuse))
-	mc.repo.SetField("StackSys", addField("StackSys", models.Gauge, mStat.StackSys))
-	mc.repo.SetField("Sys", addField("Sys", models.Gauge, mStat.Sys))
-	mc.repo.SetField("TotalAlloc", addField("TotalAlloc", models.Gauge, mStat.TotalAlloc))
-	mc.repo.SetField("RandomValue", addField("RandomValue", models.Gauge, rand.Int()))
+	mc.repo.SetField("Alloc", composeValueMetric("Alloc", float64(mStat.Alloc)))
+	mc.repo.SetField("BuckHashSys", composeValueMetric("BuckHashSys", float64(mStat.BuckHashSys)))
+	mc.repo.SetField("Frees", composeValueMetric("Frees", float64(mStat.Frees)))
+	mc.repo.SetField("GCCPUFraction", composeValueMetric("GCCPUFraction", mStat.GCCPUFraction))
+	mc.repo.SetField("HeapAlloc", composeValueMetric("HeapAlloc", float64(mStat.HeapAlloc)))
+	mc.repo.SetField("HeapIdle", composeValueMetric("HeapIdle", float64(mStat.HeapIdle)))
+	mc.repo.SetField("HeapInuse", composeValueMetric("HeapInuse", float64(mStat.HeapInuse)))
+	mc.repo.SetField("HeapObjects", composeValueMetric("HeapObjects", float64(mStat.HeapObjects)))
+	mc.repo.SetField("HeapReleased", composeValueMetric("HeapReleased", float64(mStat.HeapReleased)))
+	mc.repo.SetField("HeapSys", composeValueMetric("HeapSys", float64(mStat.HeapSys)))
+	mc.repo.SetField("LastGC", composeValueMetric("LastGC", float64(mStat.LastGC)))
+	mc.repo.SetField("Lookups", composeValueMetric("Lookups", float64(mStat.Lookups)))
+	mc.repo.SetField("MCacheInuse", composeValueMetric("MCacheInuse", float64(mStat.MCacheInuse)))
+	mc.repo.SetField("MCacheSys", composeValueMetric("MCacheSys", float64(mStat.MCacheSys)))
+	mc.repo.SetField("MSpanInuse", composeValueMetric("MSpanInuse", float64(mStat.MSpanInuse)))
+	mc.repo.SetField("MSpanSys", composeValueMetric("MSpanSys", float64(mStat.MSpanSys)))
+	mc.repo.SetField("Mallocs", composeValueMetric("Mallocs", float64(mStat.Mallocs)))
+	mc.repo.SetField("NextGC", composeValueMetric("NextGC", float64(mStat.NextGC)))
+	mc.repo.SetField("NumForcedGC", composeValueMetric("NumForcedGC", float64(mStat.NumForcedGC)))
+	mc.repo.SetField("NumGC", composeValueMetric("NumGC", float64(mStat.NumGC)))
+	mc.repo.SetField("OtherSys", composeValueMetric("OtherSys", float64(mStat.OtherSys)))
+	mc.repo.SetField("PauseTotalNs", composeValueMetric("PauseTotalNs", float64(mStat.PauseTotalNs)))
+	mc.repo.SetField("StackInuse", composeValueMetric("StackInuse", float64(mStat.StackInuse)))
+	mc.repo.SetField("StackSys", composeValueMetric("StackSys", float64(mStat.StackSys)))
+	mc.repo.SetField("Sys", composeValueMetric("Sys", float64(mStat.Sys)))
+	mc.repo.SetField("TotalAlloc", composeValueMetric("TotalAlloc", float64(mStat.TotalAlloc)))
+	mc.repo.SetField("RandomValue", composeValueMetric("RandomValue", float64(rand.Int())))
 
 	mc.repo.IncrementCounter()
 }
 
-func addField(id string, mType string, n any) models.Metrics {
+func composeValueMetric(id string, v float64) models.Metrics {
 	newMetric := models.Metrics{
 		ID:    id,
-		MType: mType,
-	}
-
-	switch n.(type) {
-	case float64:
-		newV := n.(float64)
-		newMetric.Value = &newV
-	case int64:
-		newC := n.(int64)
-		newMetric.Delta = &newC
+		MType: models.Gauge,
+		Value: &v,
 	}
 
 	return newMetric
@@ -100,7 +92,7 @@ func (mc *MetricCollector) sendMetrics() {
 
 	// Запрашивем изменение метрик типа gauge
 	for _, metric := range metrics {
-		if metric.MType == "counter" {
+		if metric.MType == models.Counter {
 			continue
 		}
 
