@@ -15,18 +15,24 @@ import (
 )
 
 type MetricCollector struct {
-	repo repository.Repo
+	pollInterval   int
+	reportInterval int
+	reportHost     string
+	repo           repository.Repo
 }
 
-func NewCollector() MetricCollector {
+func NewCollector(host string) MetricCollector {
 	return MetricCollector{
-		repo: repository.NewInMemoryStorage(),
+		pollInterval:   2,
+		reportInterval: 10,
+		reportHost:     host,
+		repo:           repository.NewInMemoryStorage(),
 	}
 }
 
 func (mc *MetricCollector) Run() {
-	collectTicker := time.NewTicker(2 * time.Second)
-	sendTicker := time.NewTicker(10 * time.Second)
+	collectTicker := time.NewTicker(time.Duration(mc.pollInterval) * time.Second)
+	sendTicker := time.NewTicker(time.Duration(mc.reportInterval) * time.Second)
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
@@ -98,12 +104,12 @@ func (mc *MetricCollector) sendMetrics() {
 			continue
 		}
 
-		url := fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", metric.MType, metric.ID, *metric.Value)
+		url := fmt.Sprintf("%s/update/%s/%s/%v", mc.reportHost, metric.MType, metric.ID, *metric.Value)
 		http.Post(url, "text/plain", nil)
 	}
 
 	// Отдельно отправляем счетчик
 	pollCounter := metrics["PollCounter"]
-	url := fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", pollCounter.MType, pollCounter.ID, *pollCounter.Delta)
+	url := fmt.Sprintf("%s/update/%s/%s/%v", mc.reportHost, pollCounter.MType, pollCounter.ID, *pollCounter.Delta)
 	http.Post(url, "text/plain", nil)
 }
