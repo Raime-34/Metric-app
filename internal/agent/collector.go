@@ -17,6 +17,25 @@ func NewCollector() MetricCollector {
 	}
 }
 
+func (mc *MetricCollector) Run() {
+	collectTicker := time.NewTicker(2 * time.Second)
+	sendTicker := time.NewTicker(10 * time.Second)
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+loop:
+	for {
+		select {
+		case <-collectTicker.C:
+			mc.collect()
+		case <-sendTicker.C:
+
+		case <-sigs:
+			break loop
+		}
+	}
+}
+
 func (mc *MetricCollector) collect() {
 	var mStat runtime.MemStats
 	runtime.ReadMemStats(&mStat)
