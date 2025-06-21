@@ -1,10 +1,16 @@
 package agent
 
 import (
+	"fmt"
 	"math/rand"
 	models "metricapp/internal/model"
 	"metricapp/internal/repository"
+	"net/http"
+	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
+	"time"
 )
 
 type MetricCollector struct {
@@ -29,7 +35,7 @@ loop:
 		case <-collectTicker.C:
 			mc.collect()
 		case <-sendTicker.C:
-
+			mc.sendMetrics()
 		case <-sigs:
 			break loop
 		}
@@ -87,4 +93,23 @@ func addField(id string, mType string, n any) models.Metrics {
 	}
 
 	return newMetric
+}
+
+func (mc *MetricCollector) sendMetrics() {
+	metrics := mc.repo.GetFields()
+
+	// Запрашивем изменение метрик типа gauge
+	for _, metric := range metrics {
+		if metric.MType == "counter" {
+			continue
+		}
+
+		url := fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", metric.MType, metric.ID, metric.Value)
+		http.Post(url, "text/plain", nil)
+	}
+
+	// Отдельно отправляем счетчик
+	pollCounter := metrics["PollCounter"]
+	url := fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", pollCounter.MType, pollCounter.ID, pollCounter.Delta)
+	http.Post(url, "text/plain", nil)
 }
