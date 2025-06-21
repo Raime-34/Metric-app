@@ -3,6 +3,7 @@ package agent
 import (
 	"fmt"
 	"math/rand"
+	"metricapp/internal/logger"
 	models "metricapp/internal/model"
 	"metricapp/internal/repository"
 	"net/http"
@@ -88,6 +89,7 @@ func composeValueMetric(id string, v float64) models.Metrics {
 }
 
 func (mc *MetricCollector) sendMetrics() {
+	logger.Info("Sending data to server...")
 	metrics := mc.repo.GetFields()
 
 	// Запрашивем изменение метрик типа gauge
