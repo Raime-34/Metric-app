@@ -98,12 +98,12 @@ func (mc *MetricCollector) sendMetrics() {
 			continue
 		}
 
-		url := fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", metric.MType, metric.ID, metric.Value)
+		url := fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", metric.MType, metric.ID, *metric.Value)
 		http.Post(url, "text/plain", nil)
 	}
 
 	// Отдельно отправляем счетчик
 	pollCounter := metrics["PollCounter"]
-	url := fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", pollCounter.MType, pollCounter.ID, pollCounter.Delta)
+	url := fmt.Sprintf("http://localhost:8080/update/%s/%s/%v", pollCounter.MType, pollCounter.ID, *pollCounter.Delta)
 	http.Post(url, "text/plain", nil)
 }
