@@ -105,11 +105,17 @@ func (mc *MetricCollector) sendMetrics() {
 		}
 
 		url := fmt.Sprintf("%s/update/%s/%s/%v", mc.reportHost, metric.MType, metric.ID, *metric.Value)
-		http.Post(url, "text/plain", nil)
+		resp, err := http.Post(url, "text/plain", nil)
+		if err == nil {
+			defer resp.Body.Close()
+		}
 	}
 
 	// Отдельно отправляем счетчик
 	pollCounter := metrics["PollCounter"]
 	url := fmt.Sprintf("%s/update/%s/%s/%v", mc.reportHost, pollCounter.MType, pollCounter.ID, *pollCounter.Delta)
-	http.Post(url, "text/plain", nil)
+	resp, err := http.Post(url, "text/plain", nil)
+	if err == nil {
+		defer resp.Body.Close()
+	}
 }
