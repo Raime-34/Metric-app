@@ -8,13 +8,11 @@ import (
 type Repo interface {
 	SetField(string, models.Metrics)
 	GetFields() map[string]models.Metrics
-	GetCounter() int64
 	IncrementCounter()
 }
 
 type InMemoryStorage struct {
 	metrics map[string]models.Metrics
-	counter int64
 	mu      sync.RWMutex
 }
 
@@ -43,6 +41,9 @@ func (s *InMemoryStorage) GetFields() map[string]models.Metrics {
 	return newMap
 }
 
-func (s *InMemoryStorage) GetCounter() int64 { return s.counter }
-
-func (s *InMemoryStorage) IncrementCounter() { s.counter++ }
+func (s *InMemoryStorage) IncrementCounter() {
+	pollCounter := s.metrics["PollCounter"]
+	newCounterValue := *pollCounter.Delta + 1
+	pollCounter.Delta = &newCounterValue
+	s.metrics["PollCounter"] = pollCounter
+}
