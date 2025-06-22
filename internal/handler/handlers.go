@@ -45,5 +45,8 @@ func (h *MetricHandler) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 		}
 
 		h.storage.IncrementCounter(parsedValue)
+	default:
+		http.Error(w, "unknown metric type", http.StatusBadRequest)
+		return
 	}
 }

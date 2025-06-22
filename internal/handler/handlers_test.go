@@ -64,6 +64,13 @@ func TestMemeStorage_UpdateMetrics(t *testing.T) {
 			mType:        models.Counter,
 			mValue:       "some string",
 		},
+		{
+			name:         "ivalid metric",
+			expectedCode: http.StatusBadRequest,
+			mName:        "test",
+			mType:        "somestring",
+			mValue:       "500",
+		},
 	}
 
 	for _, c := range cases {
@@ -79,5 +86,6 @@ func TestMemeStorage_UpdateMetrics(t *testing.T) {
 
 		res := w.Result()
 		assert.Equal(t, c.expectedCode, res.StatusCode)
+		res.Body.Close()
 	}
 }
