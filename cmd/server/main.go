@@ -1,3 +1,9 @@
 package main
 
-func main() {}
+import (
+	"metricapp/internal/handler"
+)
+
+func main() {
+	handler.Start()
+}
