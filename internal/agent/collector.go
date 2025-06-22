@@ -18,7 +18,7 @@ type MetricCollector struct {
 	pollInterval   int
 	reportInterval int
 	reportHost     string
-	repo           repository.Repo
+	repo           repository.Repo[models.Metrics]
 }
 
 func NewCollector(host string) MetricCollector {

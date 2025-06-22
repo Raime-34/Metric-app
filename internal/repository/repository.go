@@ -1,11 +1,7 @@
 package repository
 
-import (
-	models "metricapp/internal/model"
-)
-
-type Repo interface {
-	SetField(string, models.Metrics)
-	GetFields() map[string]models.Metrics
+type Repo[T any] interface {
+	SetField(string, T)
+	GetFields() map[string]T
 	IncrementCounter()
 }
