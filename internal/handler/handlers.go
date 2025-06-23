@@ -49,7 +49,7 @@ func (h *MetricHandler) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 			Delta: parsedValue,
 		})
 	default:
-		http.Error(w, "unknown metric type", http.StatusBadRequest)
+		http.Error(w, "unknown metric type", http.StatusNotFound)
 		return
 	}
 }
@@ -71,7 +71,7 @@ func (h *MetricHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
 	case models.Counter:
 		counter, ok := h.storage.GetCounter(mName)
 		if !ok {
-			http.Error(w, "unknown counter", http.StatusBadRequest)
+			http.Error(w, "unknown counter", http.StatusNotFound)
 			return
 		}
 

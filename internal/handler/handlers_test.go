@@ -66,7 +66,7 @@ func TestMemeStorage_UpdateMetrics(t *testing.T) {
 		},
 		{
 			name:         "invalid metric",
-			expectedCode: http.StatusBadRequest,
+			expectedCode: http.StatusNotFound,
 			mName:        "test",
 			mType:        "some string",
 			mValue:       "500",
