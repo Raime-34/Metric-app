@@ -12,9 +12,9 @@ func Start() {
 	router := chi.NewRouter()
 	handler := NewMetricHandler()
 
-	router.Route("/update/{mType}/{mName}", func(r chi.Router) {
-		r.Post("/{mValue}", handler.UpdateMetrics)
-		r.Get("/", nil)
+	router.Route("/", func(r chi.Router) {
+		r.Post("update/{mType}/{mName}/{mValue}", handler.UpdateMetrics)
+		r.Get("value/{mType}/{mName}", handler.GetMetric)
 	})
 
 	http.ListenAndServe(":8080", router)
