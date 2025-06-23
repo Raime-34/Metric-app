@@ -35,10 +35,22 @@ func (ms *MemStorage) GetFields() map[string]float64 {
 	return newMap
 }
 
+func (ms *MemStorage) GetField(name string) (float64, bool) {
+	ms.mu.RLock()
+	defer ms.mu.RUnlock()
+
+	value, ok := ms.storage[name]
+	return value, ok
+}
+
 func (ms *MemStorage) IncrementCounter(n ...int64) {
 	if len(n) == 0 {
 		return
 	}
 
 	ms.counter.Add(n[0])
+}
+
+func (ms *MemStorage) GetCounter() int64 {
+	return ms.counter.Load()
 }

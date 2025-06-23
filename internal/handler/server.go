@@ -11,6 +11,11 @@ func Start() {
 	logger.InitLogger()
 	router := chi.NewRouter()
 	handler := NewMetricHandler()
-	router.Post("/update/{mType}/{mName}/{mValue}", handler.UpdateMetrics)
+
+	router.Route("/update/{mType}/{mName}", func(r chi.Router) {
+		r.Post("/{mValue}", handler.UpdateMetrics)
+		r.Get("/", nil)
+	})
+
 	http.ListenAndServe(":8080", router)
 }

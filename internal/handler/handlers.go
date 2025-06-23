@@ -50,3 +50,23 @@ func (h *MetricHandler) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *MetricHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
+	mType := chi.URLParam(r, "mType")
+	mName := chi.URLParam(r, "mName")
+
+	switch mType {
+	case models.Gauge:
+		v, ok := h.storage.GetField(mName)
+		if !ok {
+			http.Error(w, "unknown metric name", http.StatusBadRequest)
+			return
+		}
+
+		s := strconv.Itoa(int(v))
+		w.Write([]byte(s))
+	case models.Counter:
+		s := strconv.Itoa(int(h.storage.GetCounter()))
+		w.Write([]byte(s))
+	}
+}
