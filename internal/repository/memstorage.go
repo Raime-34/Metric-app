@@ -6,14 +6,16 @@ import (
 )
 
 type MemStorage struct {
-	storage map[string]float64
-	counter atomic.Int64
-	mu      sync.RWMutex
+	storage  map[string]float64
+	counters map[string]int64
+	counter  atomic.Int64
+	mu       sync.RWMutex
 }
 
 func NewMemStorage() MemStorage {
 	return MemStorage{
-		storage: make(map[string]float64),
+		storage:  make(map[string]float64),
+		counters: make(map[string]int64),
 	}
 }
 
@@ -48,7 +50,9 @@ func (ms *MemStorage) IncrementCounter(n ...int64) {
 		return
 	}
 
-	ms.counter.Add(n[0])
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+	ms.counters[n[0].Name] = ms.counters[n[0].Name] + n[0].Delta
 }
 
 func (ms *MemStorage) GetCounter() int64 {

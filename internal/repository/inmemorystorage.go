@@ -35,7 +35,7 @@ func (s *InMemoryStorage) GetFields() map[string]models.Metrics {
 	return newMap
 }
 
-func (s *InMemoryStorage) IncrementCounter(n ...int64) {
+func (s *InMemoryStorage) IncrementCounter(n ...Counter) {
 	pollCounter := s.metrics["PollCounter"]
 	if pollCounter.Delta == nil {
 		var zeroCounter int64

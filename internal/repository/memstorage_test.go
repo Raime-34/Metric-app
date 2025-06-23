@@ -20,7 +20,7 @@ func TestMemStorage_IncrementCounter(t *testing.T) {
 	storage := NewMemStorage()
 
 	var inc int64 = 10
-	storage.IncrementCounter(inc)
+	storage.IncrementCounter(Counter{Name: "Test", Delta: inc})
 
 	assert.Equal(t, inc, storage.counter.Load())
 }
