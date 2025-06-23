@@ -32,7 +32,7 @@ func TestMemeStorage_UpdateMetrics(t *testing.T) {
 			mValue:       url.PathEscape("500.0"),
 		},
 		{
-			name:         "valid ciunter case",
+			name:         "valid counter case",
 			expectedCode: http.StatusOK,
 			mType:        models.Counter,
 			mName:        "pollCounter",
@@ -65,10 +65,10 @@ func TestMemeStorage_UpdateMetrics(t *testing.T) {
 			mValue:       "some string",
 		},
 		{
-			name:         "ivalid metric",
+			name:         "invalid metric",
 			expectedCode: http.StatusBadRequest,
 			mName:        "test",
-			mType:        "somestring",
+			mType:        "some string",
 			mValue:       "500",
 		},
 	}
