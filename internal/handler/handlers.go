@@ -44,7 +44,10 @@ func (h *MetricHandler) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.storage.IncrementCounter(parsedValue)
+		h.storage.IncrementCounter(repository.Counter{
+			Name:  name,
+			Delta: parsedValue,
+		})
 	default:
 		http.Error(w, "unknown metric type", http.StatusBadRequest)
 		return
@@ -63,10 +66,16 @@ func (h *MetricHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		s := strconv.Itoa(int(v))
+		s := strconv.FormatFloat(v, 'f', 3, 64)
 		w.Write([]byte(s))
 	case models.Counter:
-		s := strconv.Itoa(int(h.storage.GetCounter()))
+		counter, ok := h.storage.GetCounter(mName)
+		if !ok {
+			http.Error(w, "unknown counter", http.StatusBadRequest)
+			return
+		}
+
+		s := strconv.Itoa(int(counter))
 		w.Write([]byte(s))
 	}
 }

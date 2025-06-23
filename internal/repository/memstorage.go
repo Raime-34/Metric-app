@@ -45,7 +45,7 @@ func (ms *MemStorage) GetField(name string) (float64, bool) {
 	return value, ok
 }
 
-func (ms *MemStorage) IncrementCounter(n ...int64) {
+func (ms *MemStorage) IncrementCounter(n ...Counter) {
 	if len(n) == 0 {
 		return
 	}
@@ -55,6 +55,10 @@ func (ms *MemStorage) IncrementCounter(n ...int64) {
 	ms.counters[n[0].Name] = ms.counters[n[0].Name] + n[0].Delta
 }
 
-func (ms *MemStorage) GetCounter() int64 {
-	return ms.counter.Load()
+func (ms *MemStorage) GetCounter(name string) (counter int64, ok bool) {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+
+	counter, ok = ms.counters[name]
+	return
 }
