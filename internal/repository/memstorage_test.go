@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMemStorage_SetField(t *testing.T) {
@@ -22,5 +23,8 @@ func TestMemStorage_IncrementCounter(t *testing.T) {
 	var inc int64 = 10
 	storage.IncrementCounter(Counter{Name: "Test", Delta: inc})
 
-	assert.Equal(t, inc, storage.counter.Load())
+	counter, ok := storage.GetCounter("Test")
+	require.True(t, ok)
+
+	assert.Equal(t, inc, counter)
 }
