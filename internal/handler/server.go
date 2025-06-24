@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"flag"
+	"fmt"
 	"metricapp/internal/logger"
 	"net/http"
 
@@ -8,6 +10,12 @@ import (
 )
 
 func Start() {
+	var port string
+	flag.Func("a", "Порт на котором будет поднят сервер", func(s string) error {
+		port = fmt.Sprintf(":%s", s)
+		return nil
+	})
+
 	logger.InitLogger()
 	router := chi.NewRouter()
 	handler := NewMetricHandler()
@@ -17,5 +25,5 @@ func Start() {
 		r.Get("/value/{mType}/{mName}", handler.GetMetric)
 	})
 
-	http.ListenAndServe(":8080", router)
+	http.ListenAndServe(port, router)
 }
