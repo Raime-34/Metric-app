@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"flag"
 	"metricapp/internal/logger"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,7 @@ import (
 )
 
 func TestMetricCollector_Run(t *testing.T) {
+	flag.Parse()
 	done := make(chan bool)
 	var n atomic.Uint64
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -18,6 +20,7 @@ func TestMetricCollector_Run(t *testing.T) {
 			done <- true
 		}
 	}))
+	flag.Set("server", server.URL)
 
 	logger.InitLogger()
 	go Run()
