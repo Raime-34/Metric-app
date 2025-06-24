@@ -45,5 +45,6 @@ func (s *InMemoryStorage) IncrementCounter(n ...Counter) {
 
 	newCounterValue := *pollCounter.Delta + 1
 	pollCounter.Delta = &newCounterValue
+	pollCounter.ID = "PollCounter"
 	s.metrics["PollCounter"] = pollCounter
 }
