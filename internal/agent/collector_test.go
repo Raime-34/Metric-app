@@ -20,7 +20,7 @@ func TestMetricCollector_Run(t *testing.T) {
 			done <- true
 		}
 	}))
-	flag.Set("server", server.URL)
+	flag.Set("a", server.URL)
 
 	logger.InitLogger()
 	go Run()
