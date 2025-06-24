@@ -20,8 +20,7 @@ func TestMetricCollector_Run(t *testing.T) {
 	}))
 
 	logger.InitLogger()
-	collector := NewCollector(server.URL)
-	go collector.Run()
+	go Run()
 
 	deadline := time.NewTimer(20 * time.Second)
 

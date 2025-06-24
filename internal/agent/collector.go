@@ -14,6 +14,12 @@ import (
 	"time"
 )
 
+var collector MetricCollector
+
+func init() {
+	collector = NewCollector()
+}
+
 type MetricCollector struct {
 	pollInterval   int
 	reportInterval int
@@ -21,18 +27,15 @@ type MetricCollector struct {
 	repo           repository.Repo[models.Metrics]
 }
 
-func NewCollector(host string) MetricCollector {
+func NewCollector() MetricCollector {
 	return MetricCollector{
-		pollInterval:   2,
-		reportInterval: 10,
-		reportHost:     host,
-		repo:           repository.NewInMemoryStorage(),
+		repo: repository.NewInMemoryStorage(),
 	}
 }
 
-func (mc *MetricCollector) Run() {
-	collectTicker := time.NewTicker(time.Duration(mc.pollInterval) * time.Second)
-	sendTicker := time.NewTicker(time.Duration(mc.reportInterval) * time.Second)
+func Run() {
+	collectTicker := time.NewTicker(time.Duration(collector.pollInterval) * time.Second)
+	sendTicker := time.NewTicker(time.Duration(collector.reportInterval) * time.Second)
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
@@ -40,9 +43,9 @@ loop:
 	for {
 		select {
 		case <-collectTicker.C:
-			mc.collect()
+			collector.collect()
 		case <-sendTicker.C:
-			mc.sendMetrics()
+			collector.sendMetrics()
 		case <-sigs:
 			break loop
 		}
