@@ -19,9 +19,9 @@ var collector MetricCollector
 
 func init() {
 	collector = NewCollector()
-	flag.IntVar(&collector.pollInterval, "pollInterval", 2, "Промежуток времени сбора метрик")
-	flag.IntVar(&collector.reportInterval, "reportInterval", 10, "Промежуток времени отправки данных на сервер")
-	flag.StringVar(&collector.reportHost, "server", "http://localhost:8080", "URL адрес сервера сбора метрик")
+	flag.IntVar(&collector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
+	flag.IntVar(&collector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
+	flag.StringVar(&collector.reportHost, "a", "http://localhost:8080", "URL адрес сервера сбора метрик")
 }
 
 type MetricCollector struct {
