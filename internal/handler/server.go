@@ -11,8 +11,7 @@ import (
 )
 
 func Start() {
-	var port string
-	flag.String("a", "localhost:8080", "Порт на котором будет поднят сервер")
+	port := flag.String("a", "localhost:8080", "Порт на котором будет поднят сервер")
 	flag.Parse()
 
 	logger.InitLogger()
@@ -28,7 +27,7 @@ func Start() {
 
 	logger.Info(
 		"Start listening",
-		zap.String("port", port),
+		zap.String("port", *port),
 	)
-	http.ListenAndServe(port, router)
+	http.ListenAndServe(*port, router)
 }
