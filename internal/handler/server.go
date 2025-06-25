@@ -2,7 +2,6 @@ package handler
 
 import (
 	"flag"
-	"fmt"
 	"metricapp/internal/logger"
 	"net/http"
 
@@ -13,10 +12,6 @@ import (
 
 func Start() {
 	var port string
-	flag.Func("a", "Порт на котором будет поднят сервер", func(s string) error {
-		port = fmt.Sprintf(":%s", s)
-		return nil
-	})
 	flag.String("a", "localhost:8080", "Порт на котором будет поднят сервер")
 	flag.Parse()
 
