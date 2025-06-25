@@ -21,7 +21,7 @@ func init() {
 	collector = NewCollector()
 	flag.IntVar(&collector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
 	flag.IntVar(&collector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
-	flag.StringVar(&collector.reportHost, "a", "http://localhost:8080", "URL адрес сервера сбора метрик")
+	flag.StringVar(&collector.reportHost, "a", "localhost:8080", "URL адрес сервера сбора метрик")
 }
 
 type MetricCollector struct {
@@ -111,7 +111,7 @@ func (mc *MetricCollector) sendMetrics() {
 			continue
 		}
 
-		url := fmt.Sprintf("%s/update/%s/%s/%v", mc.reportHost, metric.MType, metric.ID, *metric.Value)
+		url := fmt.Sprintf("http://%s/update/%s/%s/%v", mc.reportHost, metric.MType, metric.ID, *metric.Value)
 		resp, err := http.Post(url, "text/plain", nil)
 		if err == nil {
 			defer resp.Body.Close()
@@ -120,7 +120,7 @@ func (mc *MetricCollector) sendMetrics() {
 
 	// Отдельно отправляем счетчик
 	pollCounter := metrics["PollCounter"]
-	url := fmt.Sprintf("%s/update/%s/%s/%v", mc.reportHost, pollCounter.MType, pollCounter.ID, *pollCounter.Delta)
+	url := fmt.Sprintf("http://%s/update/%s/%s/%v", mc.reportHost, pollCounter.MType, pollCounter.ID, *pollCounter.Delta)
 	resp, err := http.Post(url, "text/plain", nil)
 	if err == nil {
 		defer resp.Body.Close()
