@@ -5,6 +5,7 @@ import (
 	"metricapp/internal/logger"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -20,7 +21,7 @@ func TestMetricCollector_Run(t *testing.T) {
 			done <- true
 		}
 	}))
-	flag.Set("a", server.URL)
+	flag.Set("a", strings.TrimPrefix(server.URL, "http://"))
 
 	logger.InitLogger()
 	go Run()
