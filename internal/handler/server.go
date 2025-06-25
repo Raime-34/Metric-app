@@ -17,11 +17,8 @@ func Start() {
 		port = fmt.Sprintf(":%s", s)
 		return nil
 	})
+	flag.String("a", "localhost:8080", "Порт на котором будет поднят сервер")
 	flag.Parse()
-
-	if port == "" {
-		flag.Set("a", "8080")
-	}
 
 	logger.InitLogger()
 	handler := NewMetricHandler()
