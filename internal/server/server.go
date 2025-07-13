@@ -10,7 +10,9 @@ import (
 	"go.uber.org/zap"
 )
 
-func Start() {
+type MetricServer struct{}
+
+func (ms *MetricServer) Start() {
 	port := flag.String("a", "localhost:8080", "Порт на котором будет поднят сервер")
 	flag.Parse()
 
