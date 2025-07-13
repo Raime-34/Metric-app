@@ -17,13 +17,6 @@ import (
 
 var collector MetricCollector
 
-func init() {
-	collector = NewCollector()
-	flag.IntVar(&collector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
-	flag.IntVar(&collector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
-	flag.StringVar(&collector.reportHost, "a", "localhost:8080", "URL адрес сервера сбора метрик")
-}
-
 type MetricCollector struct {
 	pollInterval   int
 	reportInterval int
@@ -38,6 +31,11 @@ func NewCollector() MetricCollector {
 }
 
 func Run() {
+	collector = NewCollector()
+	flag.IntVar(&collector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
+	flag.IntVar(&collector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
+	flag.StringVar(&collector.reportHost, "a", "localhost:8080", "URL адрес сервера сбора метрик")
+
 	collectTicker := time.NewTicker(time.Duration(collector.pollInterval) * time.Second)
 	sendTicker := time.NewTicker(time.Duration(collector.reportInterval) * time.Second)
 	sigs := make(chan os.Signal, 1)
