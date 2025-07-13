@@ -17,3 +17,13 @@ type Metrics struct {
 	Value *float64 `json:"value,omitempty"`
 	Hash  string   `json:"hash,omitempty"`
 }
+
+func ComposeMetrics(id string, v float64) Metrics {
+	newMetric := Metrics{
+		ID:    id,
+		MType: Gauge,
+		Value: &v,
+	}
+
+	return newMetric
+}
