@@ -2,6 +2,7 @@ package agent
 
 import (
 	"flag"
+	"log"
 	"metricapp/internal/logger"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +18,7 @@ func TestMetricCollector_Run(t *testing.T) {
 	done := make(chan bool)
 	var n atomic.Uint64
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n.Add(1)
 		if n.Load() == 28 {
 			done <- true
 		}
@@ -24,6 +26,7 @@ func TestMetricCollector_Run(t *testing.T) {
 
 	logger.InitLogger()
 	flag.Set("a", strings.TrimPrefix(server.URL, "http://"))
+	log.Println(collector.reportHost)
 	go collector.Run()
 
 	deadline := time.NewTimer(20 * time.Second)

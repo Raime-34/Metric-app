@@ -13,8 +13,8 @@ type MetricHandler struct {
 	storage repository.MemStorage
 }
 
-func NewMetricHandler() MetricHandler {
-	return MetricHandler{
+func NewMetricHandler() *MetricHandler {
+	return &MetricHandler{
 		storage: repository.NewMemStorage(),
 	}
 }
