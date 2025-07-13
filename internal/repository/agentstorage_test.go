@@ -8,7 +8,7 @@ import (
 )
 
 func TestInMemoryStorage_SetField(t *testing.T) {
-	ms := NewInMemoryStorage()
+	ms := NewAgentMemoryStorage()
 
 	value := 213.0
 	testMetric := models.Metrics{

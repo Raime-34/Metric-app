@@ -5,24 +5,24 @@ import (
 	"sync"
 )
 
-type InMemoryStorage struct {
+type AgentMemStorage struct {
 	metrics map[string]models.Metrics
 	mu      sync.RWMutex
 }
 
-func NewInMemoryStorage() *InMemoryStorage {
-	return &InMemoryStorage{
+func NewAgentMemoryStorage() *AgentMemStorage {
+	return &AgentMemStorage{
 		metrics: make(map[string]models.Metrics),
 	}
 }
 
-func (s *InMemoryStorage) SetField(key string, value models.Metrics) {
+func (s *AgentMemStorage) SetField(key string, value models.Metrics) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.metrics[key] = value
 }
 
-func (s *InMemoryStorage) GetFields() map[string]models.Metrics {
+func (s *AgentMemStorage) GetFields() map[string]models.Metrics {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -35,7 +35,7 @@ func (s *InMemoryStorage) GetFields() map[string]models.Metrics {
 	return newMap
 }
 
-func (s *InMemoryStorage) IncrementCounter(n ...Counter) {
+func (s *AgentMemStorage) IncrementCounter(n ...Counter) {
 	pollCounter := s.metrics["PollCounter"]
 	if pollCounter.Delta == nil {
 		var zeroCounter int64

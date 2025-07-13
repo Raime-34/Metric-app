@@ -24,7 +24,7 @@ type MetricCollector struct {
 
 func NewCollector() *MetricCollector {
 	newCollector := MetricCollector{
-		repo: repository.NewInMemoryStorage(),
+		repo: repository.NewAgentMemoryStorage(),
 	}
 
 	flag.IntVar(&newCollector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
