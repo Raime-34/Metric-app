@@ -41,6 +41,14 @@ func Run() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	// "Нинада goto. Почему не continue?"
+	//
+	// Тут не особо понял, так что решил просто коммент оставить
+	//
+	// Использовал goto для выхода из внешнего лупа
+	// Просто брейк же сработает на select
+	// а continue это не то, что мне нужно было
+	// так как я обрабатываю сис кол на завершение работы программы
 loop:
 	for {
 		select {
