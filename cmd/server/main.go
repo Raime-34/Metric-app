@@ -1,9 +1,9 @@
 package main
 
 import (
-	"metricapp/internal/handler"
+	"metricapp/internal/server"
 )
 
 func main() {
-	handler.Start()
+	server.Start()
 }
