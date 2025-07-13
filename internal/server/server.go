@@ -13,7 +13,7 @@ import (
 type MetricServer struct{}
 
 func (ms *MetricServer) Start() {
-	port := flag.String("a", "localhost:8080", "Порт на котором будет поднят сервер")
+	port := flag.String("a", "0.0.0.0:8080", "Порт на котором будет поднят сервер")
 	flag.Parse()
 
 	logger.InitLogger()

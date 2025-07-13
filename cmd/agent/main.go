@@ -7,9 +7,9 @@ import (
 )
 
 func main() {
-	flag.Parse()
 	logger.InitLogger()
 	collector := agent.NewCollector()
+	flag.Parse()
 
 	logger.Info("Starting metrics collection")
 	collector.Run()

@@ -9,7 +9,7 @@ COPY cmd/server cmd/server
 COPY internal/logger internal/logger
 COPY internal/model internal/model
 COPY internal/repository internal/repository
-COPY internal/handler internal/handler
+COPY internal/server internal/server
 
 RUN go build -o server ./cmd/server
 

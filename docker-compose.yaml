@@ -13,6 +13,6 @@ services:
       dockerfile: ./cmd/agent/Dockerfile
       context: .
     container_name: agent
-    command: ["./agent", "-a", "http://server:8080"]
+    command: ["./agent", "-a", "server:8080"]
     depends_on:
       - server
