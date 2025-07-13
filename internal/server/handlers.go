@@ -5,6 +5,7 @@ import (
 	"metricapp/internal/repository"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -69,7 +70,8 @@ func (h *MetricHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		s := strconv.FormatFloat(v, 'f', 1, 64)
+		s := strconv.FormatFloat(v, 'f', 3, 64)
+		s = strings.TrimRight(strings.TrimRight(s, "0"), ".")
 		w.Write([]byte(s))
 	case models.Counter:
 		counter, ok := h.storage.GetCounter(mName)
