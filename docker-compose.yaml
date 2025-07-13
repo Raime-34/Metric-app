@@ -1,0 +1,18 @@
+services:
+  server:
+    build: 
+      dockerfile: ./cmd/server/Dockerfile
+      context: .
+    container_name: server
+    command: ["./server"]
+    ports:
+      - "8080:8080"
+
+  agent:
+    build: 
+      dockerfile: ./cmd/agent/Dockerfile
+      context: .
+    container_name: agent
+    command: ["./agent", "-a", "server:8080"]
+    depends_on:
+      - server
