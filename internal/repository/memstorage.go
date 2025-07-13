@@ -45,7 +45,10 @@ func (ms *MemStorage) GetField(name string) (float64, bool) {
 	return value, ok
 }
 
-func (ms *MemStorage) IncrementCounter(n ...Counter) {
+func (ms *MemStorage) IncrementCounter(n ...struct {
+	Name  string
+	Delta int64
+}) {
 	if len(n) == 0 {
 		return
 	}

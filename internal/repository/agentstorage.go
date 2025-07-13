@@ -35,7 +35,10 @@ func (s *AgentMemStorage) GetFields() map[string]models.Metrics {
 	return newMap
 }
 
-func (s *AgentMemStorage) IncrementCounter(n ...Counter) {
+func (s *AgentMemStorage) IncrementCounter(n ...struct {
+	Name  string
+	Delta int64
+}) {
 	pollCounter := s.metrics["PollCounter"]
 	if pollCounter.Delta == nil {
 		var zeroCounter int64

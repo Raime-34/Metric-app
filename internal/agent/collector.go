@@ -19,7 +19,16 @@ type MetricCollector struct {
 	pollInterval   int
 	reportInterval int
 	reportHost     string
-	repo           repository.Repo[models.Metrics]
+	repo           Repo[models.Metrics]
+}
+
+type Repo[T any] interface {
+	SetField(string, T)
+	GetFields() map[string]T
+	IncrementCounter(...struct {
+		Name  string
+		Delta int64
+	})
 }
 
 func NewCollector() *MetricCollector {

@@ -44,7 +44,10 @@ func (h *MetricHandler) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.storage.IncrementCounter(repository.Counter{
+		h.storage.IncrementCounter(struct {
+			Name  string
+			Delta int64
+		}{
 			Name:  name,
 			Delta: parsedValue,
 		})

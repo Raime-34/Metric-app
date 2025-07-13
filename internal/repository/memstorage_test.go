@@ -21,7 +21,10 @@ func TestMemStorage_IncrementCounter(t *testing.T) {
 	storage := NewMemStorage()
 
 	var inc int64 = 10
-	storage.IncrementCounter(Counter{Name: "Test", Delta: inc})
+	storage.IncrementCounter(struct {
+		Name  string
+		Delta int64
+	}{Name: "Test", Delta: inc})
 
 	counter, ok := storage.GetCounter("Test")
 	require.True(t, ok)
