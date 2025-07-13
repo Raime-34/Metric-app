@@ -15,8 +15,6 @@ import (
 	"time"
 )
 
-var collector MetricCollector
-
 type MetricCollector struct {
 	pollInterval   int
 	reportInterval int
@@ -24,20 +22,21 @@ type MetricCollector struct {
 	repo           repository.Repo[models.Metrics]
 }
 
-func NewCollector() MetricCollector {
-	return MetricCollector{
+func NewCollector() *MetricCollector {
+	newCollector := MetricCollector{
 		repo: repository.NewInMemoryStorage(),
 	}
+
+	flag.IntVar(&newCollector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
+	flag.IntVar(&newCollector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
+	flag.StringVar(&newCollector.reportHost, "a", "localhost:8080", "URL адрес сервера сбора метрик")
+
+	return &newCollector
 }
 
-func Run() {
-	collector = NewCollector()
-	flag.IntVar(&collector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
-	flag.IntVar(&collector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
-	flag.StringVar(&collector.reportHost, "a", "localhost:8080", "URL адрес сервера сбора метрик")
-
-	collectTicker := time.NewTicker(time.Duration(collector.pollInterval) * time.Second)
-	sendTicker := time.NewTicker(time.Duration(collector.reportInterval) * time.Second)
+func (mc *MetricCollector) Run() {
+	collectTicker := time.NewTicker(time.Duration(mc.pollInterval) * time.Second)
+	sendTicker := time.NewTicker(time.Duration(mc.reportInterval) * time.Second)
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
@@ -53,9 +52,9 @@ loop:
 	for {
 		select {
 		case <-collectTicker.C:
-			collector.collect()
+			mc.collect()
 		case <-sendTicker.C:
-			collector.sendMetrics()
+			mc.sendMetrics()
 		case <-sigs:
 			break loop
 		}

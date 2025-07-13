@@ -12,19 +12,19 @@ import (
 )
 
 func TestMetricCollector_Run(t *testing.T) {
+	collector := NewCollector()
 	flag.Parse()
 	done := make(chan bool)
 	var n atomic.Uint64
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		n.Add(1)
 		if n.Load() == 28 {
 			done <- true
 		}
 	}))
-	flag.Set("a", strings.TrimPrefix(server.URL, "http://"))
 
 	logger.InitLogger()
-	go Run()
+	flag.Set("a", strings.TrimPrefix(server.URL, "http://"))
+	go collector.Run()
 
 	deadline := time.NewTimer(20 * time.Second)
 
