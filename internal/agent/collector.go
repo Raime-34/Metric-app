@@ -139,7 +139,7 @@ func (mc *MetricCollector) sendMetrics() {
 		}
 
 		// url := fmt.Sprintf("http://%s/update/%s/%s/%v", mc.reportHost, metric.MType, metric.ID, *metric.Value)
-		url := fmt.Sprintf("http://%s/update", mc.reportHost)
+		url := fmt.Sprintf("http://%s/update/", mc.reportHost)
 		b, _ := easyjson.Marshal(metric)
 		r := bytes.NewReader(b)
 
@@ -156,7 +156,7 @@ func (mc *MetricCollector) sendMetrics() {
 	b, _ := easyjson.Marshal(metrics["PollCounter"])
 	r := bytes.NewReader(b)
 
-	url := fmt.Sprintf("http://%s/update", mc.reportHost)
+	url := fmt.Sprintf("http://%s/update/", mc.reportHost)
 	resp, err := http.Post(url, "application/json", r)
 	if err == nil {
 		defer resp.Body.Close()
