@@ -45,16 +45,44 @@ func (ms *MemStorage) ProcessMetric(metric struct {
 
 	switch metric.Type {
 	case models.Gauge:
-		v := metric.Value.(float64)
+		var v float64
+
+		switch metric.Value.(type) {
+		case string:
+			value := metric.Value.(string)
+			parsedValue, err := strconv.ParseFloat(value, 64)
+			if err != nil {
+				return ErrInvalidGaugeValue
+			}
+			v = parsedValue
+		case float64:
+			value := metric.Value.(float64)
+			v = value
+		}
+
 		ms.SetField(metric.ID, v)
 	case models.Counter:
-		v := metric.Value.(float64)
+		var v int64
+
+		switch metric.Value.(type) {
+		case string:
+			value := metric.Value.(string)
+			parsedValue, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				return ErrInvalidGaugeValue
+			}
+			v = parsedValue
+		case int64:
+			value := metric.Value.(int64)
+			v = value
+		}
+
 		ms.IncrementCounter(struct {
 			Name  string
 			Delta int64
 		}{
 			Name:  metric.ID,
-			Delta: int64(v),
+			Delta: v,
 		})
 	default:
 		return ErrUnknownMetricType
