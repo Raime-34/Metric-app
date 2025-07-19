@@ -13,6 +13,8 @@ import (
 	"runtime"
 	"syscall"
 	"time"
+
+	"github.com/caarlos0/env/v11"
 )
 
 type MetricCollector struct {
@@ -36,9 +38,28 @@ func NewCollector() *MetricCollector {
 		repo: repository.NewAgentMemoryStorage(),
 	}
 
-	flag.IntVar(&newCollector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
-	flag.IntVar(&newCollector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
-	flag.StringVar(&newCollector.reportHost, "a", "localhost:8080", "URL адрес сервера сбора метрик")
+	var cfg struct {
+		Address        string `env:"ADDRESS"`
+		ReportInterval int    `env:"REPORT_INTERVAL"`
+		PollInterval   int    `env:"POLL_INTERVAL"`
+	}
+
+	err := env.Parse(&cfg)
+	if err == nil {
+		newCollector.reportHost = cfg.Address
+		newCollector.reportInterval = cfg.ReportInterval
+		newCollector.pollInterval = cfg.PollInterval
+	}
+
+	if newCollector.reportHost == "" {
+		flag.StringVar(&newCollector.reportHost, "a", "localhost:8080", "URL адрес сервера сбора метрик")
+	}
+	if newCollector.reportInterval == 0 {
+		flag.IntVar(&newCollector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
+	}
+	if newCollector.pollInterval == 0 {
+		flag.IntVar(&newCollector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
+	}
 
 	return &newCollector
 }

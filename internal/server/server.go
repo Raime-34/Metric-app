@@ -5,6 +5,7 @@ import (
 	"metricapp/internal/logger"
 	"net/http"
 
+	"github.com/caarlos0/env"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
@@ -13,7 +14,19 @@ import (
 type MetricServer struct{}
 
 func (ms *MetricServer) Start() {
-	port := flag.String("a", "0.0.0.0:8080", "Порт на котором будет поднят сервер")
+	var port string
+
+	var cfg struct {
+		Address string `env:"ADDRESS"`
+	}
+	err := env.Parse(&cfg)
+	if err == nil {
+		port = cfg.Address
+	}
+
+	if port == "" {
+		flag.StringVar(&port, "a", "0.0.0.0:8080", "Порт на котором будет поднят сервер")
+	}
 	flag.Parse()
 
 	logger.InitLogger()
@@ -29,7 +42,7 @@ func (ms *MetricServer) Start() {
 
 	logger.Info(
 		"Start listening",
-		zap.String("port", *port),
+		zap.String("port", port),
 	)
-	http.ListenAndServe(*port, router)
+	http.ListenAndServe(port, router)
 }
