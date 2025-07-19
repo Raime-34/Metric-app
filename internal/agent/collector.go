@@ -143,7 +143,7 @@ func (mc *MetricCollector) sendMetrics() {
 		b, _ := easyjson.Marshal(metric)
 		r := bytes.NewReader(b)
 
-		resp, err := http.Post(url, "text/plain", r)
+		resp, err := http.Post(url, "application/json", r)
 		if err == nil {
 			defer resp.Body.Close()
 		}
@@ -157,7 +157,7 @@ func (mc *MetricCollector) sendMetrics() {
 	r := bytes.NewReader(b)
 
 	url := fmt.Sprintf("http://%s/update", mc.reportHost)
-	resp, err := http.Post(url, "text/plain", r)
+	resp, err := http.Post(url, "application/json", r)
 	if err == nil {
 		defer resp.Body.Close()
 	}
