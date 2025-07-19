@@ -54,10 +54,10 @@ func NewCollector() *MetricCollector {
 	if newCollector.reportHost == "" {
 		flag.StringVar(&newCollector.reportHost, "a", "localhost:8080", "URL адрес сервера сбора метрик")
 	}
-	if newCollector.reportInterval == 0 {
+	if newCollector.pollInterval == 0 {
 		flag.IntVar(&newCollector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
 	}
-	if newCollector.pollInterval == 0 {
+	if newCollector.reportInterval == 0 {
 		flag.IntVar(&newCollector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
 	}
 
