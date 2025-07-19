@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -16,7 +17,6 @@ import (
 	"time"
 
 	"github.com/caarlos0/env/v11"
-	"github.com/mailru/easyjson"
 )
 
 type MetricCollector struct {
@@ -140,7 +140,16 @@ func (mc *MetricCollector) sendMetrics() {
 
 		// url := fmt.Sprintf("http://%s/update/%s/%s/%v", mc.reportHost, metric.MType, metric.ID, *metric.Value)
 		url := fmt.Sprintf("http://%s/update/", mc.reportHost)
-		b, _ := easyjson.Marshal(metric)
+		payload := struct {
+			ID    string  `json:"id"`
+			Type  string  `json:"type"`
+			Value float64 `json:"value"`
+		}{
+			ID:    metric.ID,
+			Type:  metric.MType,
+			Value: *metric.Value,
+		}
+		b, _ := json.Marshal(payload)
 		r := bytes.NewReader(b)
 
 		resp, err := http.Post(url, "application/json", r)
@@ -153,7 +162,18 @@ func (mc *MetricCollector) sendMetrics() {
 	// pollCounter := metrics["PollCounter"]
 	// url := fmt.Sprintf("http://%s/update/%s/%s/%v", mc.reportHost, pollCounter.MType, pollCounter.ID, *pollCounter.Delta)
 
-	b, _ := easyjson.Marshal(metrics["PollCounter"])
+	metric := metrics["PollCounter"]
+	payload := struct {
+		ID    string `json:"id"`
+		Type  string `json:"type"`
+		Value int64  `json:"value"`
+	}{
+		ID:    metric.ID,
+		Type:  metric.MType,
+		Value: *metric.Delta,
+	}
+	b, _ := json.Marshal(payload)
+
 	r := bytes.NewReader(b)
 
 	url := fmt.Sprintf("http://%s/update/", mc.reportHost)
