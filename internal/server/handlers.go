@@ -64,7 +64,7 @@ func (h *MetricHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
 
 	b, err := h.storage.ProcessGetField(mName, mType)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
