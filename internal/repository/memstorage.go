@@ -76,28 +76,28 @@ func (ms *MemStorage) GetFields() map[string]float64 {
 	return newMap
 }
 
-func (ms *MemStorage) ProcessGetField(mName string, mType string) ([]byte, error) {
+func (ms *MemStorage) ProcessGetField(mName string, mType string) ([]byte, any, error) {
 	switch mType {
 	case models.Gauge:
 		v, ok := ms.GetField(mName)
 		if !ok {
-			return nil, ErrUnknownMetric
+			return nil, nil, ErrUnknownMetric
 		}
 
 		s := strconv.FormatFloat(v, 'f', 3, 64)
 		s = strings.TrimRight(strings.TrimRight(s, "0"), ".")
-		return []byte(s), nil
+		return []byte(s), v, nil
 	case models.Counter:
 		counter, ok := ms.GetCounter(mName)
 		if !ok {
-			return nil, ErrUnknownCounter
+			return nil, nil, ErrUnknownCounter
 		}
 
 		s := strconv.Itoa(int(counter))
-		return []byte(s), nil
+		return []byte(s), counter, nil
 	}
 
-	return nil, fmt.Errorf("unknown error")
+	return nil, nil, fmt.Errorf("unknown error")
 }
 
 func (ms *MemStorage) GetField(name string) (float64, bool) {

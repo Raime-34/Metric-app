@@ -62,7 +62,7 @@ func (h *MetricHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
 	mType := chi.URLParam(r, "mType")
 	mName := chi.URLParam(r, "mName")
 
-	b, err := h.storage.ProcessGetField(mName, mType)
+	b, _, err := h.storage.ProcessGetField(mName, mType)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -113,11 +113,22 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err = h.storage.ProcessGetField(payload.ID, payload.Type)
+	_, v, err := h.storage.ProcessGetField(payload.ID, payload.Type)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+
+	resp := struct {
+		ID    string `json:"id"`
+		Type  string `json:"type"`
+		Value any    `json:"value"`
+	}{
+		ID:    payload.ID,
+		Type:  payload.Type,
+		Value: v,
+	}
+	b, _ = json.Marshal(resp)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(b)
