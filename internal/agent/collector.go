@@ -162,7 +162,7 @@ func (mc *MetricCollector) sendMetrics() {
 	// pollCounter := metrics["PollCounter"]
 	// url := fmt.Sprintf("http://%s/update/%s/%s/%v", mc.reportHost, pollCounter.MType, pollCounter.ID, *pollCounter.Delta)
 
-	metric := metrics["PollCounter"]
+	metric := metrics["PollCount"]
 	payload := struct {
 		ID    string `json:"id"`
 		Type  string `json:"type"`
