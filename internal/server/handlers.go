@@ -104,7 +104,7 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var payload struct {
-		Id   string `json:"id"`
+		ID   string `json:"id"`
 		Type string `json:"type"`
 	}
 	err = json.Unmarshal(b, &payload)
@@ -113,7 +113,7 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err = h.storage.ProcessGetField(payload.Id, payload.Type)
+	b, err = h.storage.ProcessGetField(payload.ID, payload.Type)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
