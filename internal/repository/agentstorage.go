@@ -37,14 +37,14 @@ func (s *AgentMemStorage) GetFields() map[string]models.Metrics {
 }
 
 func (s *AgentMemStorage) refreshPollCounter() {
-	s.metrics["PollCount"] = models.ComposeMetrics("PollCount", models.Counter, 0, 0)
+	s.metrics["PollCounter"] = models.ComposeMetrics("PollCounter", models.Counter, 0, 0)
 }
 
 func (s *AgentMemStorage) IncrementCounter(n ...struct {
 	Name  string
 	Delta int64
 }) {
-	pollCounter := s.metrics["PollCount"]
+	pollCounter := s.metrics["PollCounter"]
 	if pollCounter.Delta == nil {
 		var zeroCounter int64
 		pollCounter.MType = models.Counter
@@ -53,6 +53,6 @@ func (s *AgentMemStorage) IncrementCounter(n ...struct {
 
 	newCounterValue := *pollCounter.Delta + 1
 	pollCounter.Delta = &newCounterValue
-	pollCounter.ID = "PollCount"
-	s.metrics["PollCount"] = pollCounter
+	pollCounter.ID = "PollCounter"
+	s.metrics["PollCounter"] = pollCounter
 }
