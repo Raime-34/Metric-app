@@ -3,13 +3,10 @@ package server
 import (
 	"encoding/json"
 	"io"
-	models "metricapp/internal/model"
 	"metricapp/internal/repository"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mailru/easyjson"
 )
 
 type MetricHandler struct {
@@ -27,28 +24,16 @@ func (h *MetricHandler) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "mName")
 	value := chi.URLParam(r, "mValue")
 
-	var (
-		v float64
-		d int64
-	)
-	switch mType {
-	case models.Gauge:
-		parsedValue, err := strconv.ParseFloat(value, 64)
-		if err != nil {
-			http.Error(w, "failed to parse gauge value", http.StatusBadRequest)
-			return
-		}
-		v = parsedValue
-	case models.Counter:
-		parsedValue, err := strconv.ParseInt(value, 10, 64)
-		if err != nil {
-			http.Error(w, "failed to parse counter value", http.StatusBadRequest)
-			return
-		}
-		d = parsedValue
+	metrics := struct {
+		ID    string `json:"id"`
+		Type  string `json:"type"`
+		Value any    `json:"value"`
+	}{
+		ID:    name,
+		Type:  mType,
+		Value: value,
 	}
-
-	if err := h.storage.ProcessMetric(models.ComposeMetrics(name, mType, v, d)); err != nil {
+	if err := h.storage.ProcessMetric(metrics); err != nil {
 		switch err {
 		case repository.ErrMetricIsRequired:
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -79,8 +64,12 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 	}
 	defer r.Body.Close()
 
-	var metrics models.Metrics
-	err = easyjson.Unmarshal(b, &metrics)
+	var metrics struct {
+		ID    string `json:"id"`
+		Type  string `json:"type"`
+		Value any    `json:"value"`
+	}
+	err = json.Unmarshal(b, &metrics)
 	if err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return

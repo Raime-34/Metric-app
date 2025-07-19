@@ -34,22 +34,27 @@ var (
 	ErrUnknownCounter = errors.New("unknown counter")
 )
 
-func (ms *MemStorage) ProcessMetric(metric models.Metrics) error {
+func (ms *MemStorage) ProcessMetric(metric struct {
+	ID    string `json:"id"`
+	Type  string `json:"type"`
+	Value any    `json:"value"`
+}) error {
 	if metric.ID == "" {
 		return ErrMetricIsRequired
 	}
 
-	switch metric.MType {
+	switch metric.Type {
 	case models.Gauge:
-		ms.SetField(metric.ID, *metric.Value)
+		v := metric.Value.(float64)
+		ms.SetField(metric.ID, v)
 	case models.Counter:
-
+		v := metric.Value.(float64)
 		ms.IncrementCounter(struct {
 			Name  string
 			Delta int64
 		}{
 			Name:  metric.ID,
-			Delta: *metric.Delta,
+			Delta: int64(v),
 		})
 	default:
 		return ErrUnknownMetricType
