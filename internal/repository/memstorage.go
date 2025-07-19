@@ -72,9 +72,9 @@ func (ms *MemStorage) ProcessMetric(metric struct {
 				return ErrInvalidGaugeValue
 			}
 			v = parsedValue
-		case int64:
-			value := metric.Value.(int64)
-			v = value
+		case float64:
+			value := metric.Value.(float64)
+			v = int64(value)
 		}
 
 		ms.IncrementCounter(struct {
