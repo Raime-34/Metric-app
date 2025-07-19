@@ -3,6 +3,8 @@ module metricapp
 go 1.24.2
 
 require (
+	github.com/caarlos0/env v3.5.0+incompatible
+	github.com/caarlos0/env/v11 v11.3.1
 	github.com/go-chi/chi/v5 v5.2.2
 	github.com/stretchr/testify v1.8.1
 	go.uber.org/zap v1.27.0
