@@ -89,6 +89,15 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
+	v, _ := h.storage.GetField(metrics.ID)
+	resp := make(map[string]any)
+	resp["id"] = metrics.ID
+	resp["type"] = metrics.Type
+	resp["value"] = v
+
+	b, _ = json.Marshal(resp)
+	w.Write(b)
+
 	logger.Info(
 		"UPDATE",
 		zap.Any("metric", metrics),
