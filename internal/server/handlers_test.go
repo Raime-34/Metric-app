@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"metricapp/internal/logger"
 	models "metricapp/internal/model"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +17,7 @@ import (
 )
 
 func TestMemeStorage_UpdateMetrics(t *testing.T) {
+	logger.InitLogger()
 	handler := NewMetricHandler()
 
 	for _, c := range cases {
@@ -36,6 +38,7 @@ func TestMemeStorage_UpdateMetrics(t *testing.T) {
 }
 
 func TestMetricHandler_UpdateMetricsWJSON(t *testing.T) {
+	logger.InitLogger()
 	handler := NewMetricHandler()
 
 	for _, c := range cases {
