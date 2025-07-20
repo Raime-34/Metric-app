@@ -182,4 +182,23 @@ func (mc *MetricCollector) sendMetrics() {
 	if err == nil {
 		defer resp.Body.Close()
 	}
+
+	payload = struct {
+		ID    string `json:"id"`
+		Type  string `json:"type"`
+		Value int64  `json:"value"`
+	}{
+		ID:    "PollCount",
+		Type:  metric.MType,
+		Value: *metric.Delta,
+	}
+	b, _ = json.Marshal(payload)
+
+	r = bytes.NewReader(b)
+
+	url = fmt.Sprintf("http://%s/update/", mc.reportHost)
+	resp, err = http.Post(url, "application/json", r)
+	if err == nil {
+		defer resp.Body.Close()
+	}
 }
