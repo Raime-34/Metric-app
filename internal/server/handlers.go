@@ -75,6 +75,9 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if metrics.ID == "PollCount" {
+		metrics.ID = "PollCounter"
+	}
 	if err := h.storage.ProcessMetric(metrics); err != nil {
 		switch err {
 		case repository.ErrMetricIsRequired:
@@ -102,21 +105,25 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resp := struct {
+		ID    string `json:"id"`
+		Type  string `json:"type"`
+		Value any    `json:"value"`
+	}{
+		ID:   payload.ID,
+		Type: payload.Type,
+	}
+
+	if payload.ID == "PollCount" {
+		payload.ID = "PollCounter"
+	}
 	_, v, err := h.storage.ProcessGetField(payload.ID, payload.Type)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	resp := struct {
-		ID    string `json:"id"`
-		Type  string `json:"type"`
-		Value any    `json:"value"`
-	}{
-		ID:    payload.ID,
-		Type:  payload.Type,
-		Value: v,
-	}
+	resp.Value = v
 	b, _ = json.Marshal(resp)
 
 	w.Header().Set("Content-Type", "application/json")
