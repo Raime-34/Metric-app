@@ -1,12 +1,15 @@
 package server
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"io"
 	"metricapp/internal/logger"
 	models "metricapp/internal/model"
 	"metricapp/internal/repository"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -214,11 +217,36 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
+func gzipDecompress(data []byte) ([]byte, error) {
+	buf := bytes.NewReader(data)
+	gr, err := gzip.NewReader(buf)
+	if err != nil {
+		return nil, err
+	}
+	defer gr.Close()
+
+	var out bytes.Buffer
+	_, err = io.Copy(&out, gr)
+	if err != nil {
+		return nil, err
+	}
+
+	return out.Bytes(), nil
+}
+
 func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "error to read request body", http.StatusInternalServerError)
 		return
+	}
+
+	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+		b, err = gzipDecompress(b)
+		if err != nil {
+			http.Error(w, "failed to decompress data", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	var payload struct {
