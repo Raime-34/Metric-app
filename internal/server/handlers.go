@@ -77,9 +77,9 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if metrics.ID == "PollCount" {
-		metrics.ID = "PollCounter"
-	}
+	// if metrics.ID == "PollCount" {
+	// 	metrics.ID = "PollCounter"
+	// }
 	if err := h.storage.ProcessMetric(metrics); err != nil {
 		switch err {
 		case repository.ErrMetricIsRequired:
@@ -126,9 +126,9 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 		zap.Any("payload", payload),
 	)
 
-	if payload.ID == "PollCount" {
-		payload.ID = "PollCounter"
-	}
+	// if payload.ID == "PollCount" {
+	// 	payload.ID = "PollCounter"
+	// }
 	_, v, err := h.storage.ProcessGetField(payload.ID, payload.Type)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
