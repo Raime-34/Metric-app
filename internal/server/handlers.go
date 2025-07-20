@@ -89,7 +89,7 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	v, _ := h.storage.GetField(metrics.ID)
+	v, _ := h.storage.GetCounter(metrics.ID)
 	resp := make(map[string]any)
 	resp["id"] = metrics.ID
 	resp["type"] = metrics.Type
