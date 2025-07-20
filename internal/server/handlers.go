@@ -251,6 +251,8 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "failed to decompress data: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+	} else {
+		logger.Info("bruh")
 	}
 
 	var payload struct {
