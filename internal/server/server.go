@@ -1,13 +1,16 @@
 package server
 
 import (
+	"compress/gzip"
 	"flag"
+	"io"
 	"metricapp/internal/logger"
 	"net/http"
 	"time"
 
 	"github.com/caarlos0/env"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 )
 
@@ -34,6 +37,8 @@ func (ms *MetricServer) Start() {
 
 	router := chi.NewRouter()
 	router.Use(requestLogger)
+	router.Use(GzipDecompressMiddleware)
+	router.Use(middleware.Compress(1))
 
 	router.Route("/", func(r chi.Router) {
 		r.Post("/update/{mType}/{mName}/{mValue}", handler.UpdateMetrics)
@@ -73,6 +78,21 @@ func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.ResponseWriter.WriteHeader(statusCode)
 	r.responseData.status = statusCode
+}
+
+func GzipDecompressMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Content-Encoding") == "gzip" {
+			gz, err := gzip.NewReader(r.Body)
+			if err != nil {
+				http.Error(w, "invalid gzip body", http.StatusBadRequest)
+				return
+			}
+			defer gz.Close()
+			r.Body = io.NopCloser(gz)
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func requestLogger(next http.Handler) http.Handler {

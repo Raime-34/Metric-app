@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -151,18 +152,20 @@ func (mc *MetricCollector) sendMetrics() {
 			Value: *metric.Value,
 		}
 		b, _ := json.Marshal(payload)
+		b, _ = gzipCompress(b)
 		r := bytes.NewReader(b)
 
-		resp, err := http.Post(url, "application/json", r)
+		req, _ := http.NewRequest(http.MethodPost, url, r)
+		req.Header.Set("Content-Encoding", "gzip")
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		// resp, err := http.Post(url, "application/json", r)
 		if err == nil {
 			defer resp.Body.Close()
 		}
 	}
 
 	// Отдельно отправляем счетчик
-	// pollCounter := metrics["PollCounter"]
-	// url := fmt.Sprintf("http://%s/update/%s/%s/%v", mc.reportHost, pollCounter.MType, pollCounter.ID, *pollCounter.Delta)
-
 	metric := metrics["PollCounter"]
 	payload := struct {
 		ID    string `json:"id"`
@@ -174,11 +177,15 @@ func (mc *MetricCollector) sendMetrics() {
 		Value: *metric.Delta,
 	}
 	b, _ := json.Marshal(payload)
-
+	b, _ = gzipCompress(b)
 	r := bytes.NewReader(b)
 
 	url := fmt.Sprintf("http://%s/update/", mc.reportHost)
-	resp, err := http.Post(url, "application/json", r)
+	req, _ := http.NewRequest(http.MethodPost, url, r)
+	req.Header.Set("Content-Encoding", "gzip")
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	// resp, err := http.Post(url, "application/json", r)
 	if err == nil {
 		defer resp.Body.Close()
 	}
@@ -201,4 +208,21 @@ func (mc *MetricCollector) sendMetrics() {
 	if err == nil {
 		defer resp.Body.Close()
 	}
+}
+
+func gzipCompress(data []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	gw := gzip.NewWriter(&buf)
+
+	_, err := gw.Write(data)
+	if err != nil {
+		return nil, err
+	}
+
+	err = gw.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
