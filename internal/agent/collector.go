@@ -167,7 +167,7 @@ func (mc *MetricCollector) sendMetrics() {
 	payload := struct {
 		ID    string `json:"id"`
 		Type  string `json:"type"`
-		Value int64  `json:"value"`
+		Value int64  `json:"delta"`
 	}{
 		ID:    metric.ID,
 		Type:  metric.MType,
@@ -186,7 +186,7 @@ func (mc *MetricCollector) sendMetrics() {
 	payload = struct {
 		ID    string `json:"id"`
 		Type  string `json:"type"`
-		Value int64  `json:"value"`
+		Value int64  `json:"delta"`
 	}{
 		ID:    "PollCount",
 		Type:  metric.MType,
