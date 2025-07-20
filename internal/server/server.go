@@ -40,7 +40,8 @@ func (ms *MetricServer) Start() {
 
 	router.Route("/", func(r chi.Router) {
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			logger.Info("????????")
+			w.Header().Set("Content-Type", "text/html")
+			w.Write([]byte("Some text"))
 		})
 
 		r.Post("/update/{mType}/{mName}/{mValue}", handler.UpdateMetrics)
