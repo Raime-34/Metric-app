@@ -32,7 +32,7 @@ func (s *AgentMemStorage) GetFields() map[string]models.Metrics {
 		newMap[k] = v
 	}
 
-	// s.refreshPollCounter()
+	s.refreshPollCounter()
 	return newMap
 }
 
