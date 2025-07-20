@@ -37,7 +37,7 @@ func (ms *MetricServer) Start() {
 
 	router := chi.NewRouter()
 	router.Use(requestLogger)
-	router.Use(GzipDecompressMiddleware)
+	// router.Use(GzipDecompressMiddleware)
 	router.Use(middleware.Compress(1))
 
 	router.Route("/", func(r chi.Router) {

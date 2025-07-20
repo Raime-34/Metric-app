@@ -232,7 +232,7 @@ func gzipDecompress(data []byte) ([]byte, error) {
 
 	logger.Info(
 		"decomressed",
-		zap.String("msg", string(b)),
+		zap.ByteString("msg", b),
 	)
 	return b, nil
 }
@@ -259,6 +259,7 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 		ID   string `json:"id"`
 		Type string `json:"type"`
 	}
+
 	err = json.Unmarshal(b, &payload)
 	if err != nil {
 		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
