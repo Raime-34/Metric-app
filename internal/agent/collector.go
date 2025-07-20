@@ -124,6 +124,7 @@ func (mc *MetricCollector) collect() {
 	mc.repo.SetField("Sys", models.ComposeMetrics("Sys", models.Gauge, float64(mStat.Sys), 0))
 	mc.repo.SetField("TotalAlloc", models.ComposeMetrics("TotalAlloc", models.Gauge, float64(mStat.TotalAlloc), 0))
 	mc.repo.SetField("RandomValue", models.ComposeMetrics("RandomValue", models.Gauge, float64(rand.Int()), 0))
+	mc.repo.SetField("GCSys", models.ComposeMetrics("GCSys", models.Gauge, float64(mStat.GCSys), 0))
 
 	mc.repo.IncrementCounter()
 }
