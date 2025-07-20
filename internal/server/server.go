@@ -81,7 +81,7 @@ func requestLogger(next http.Handler) http.Handler {
 		uri := r.RequestURI
 		method := r.Method
 		b, _ := io.ReadAll(r.Body)
-		r.Body.Close()
+		// r.Body.Close()
 
 		start := time.Now()
 		responseData := &responseData{
