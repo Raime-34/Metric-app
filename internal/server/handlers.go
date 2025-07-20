@@ -71,7 +71,7 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 	}
 	err = json.Unmarshal(b, &metrics)
 	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -101,7 +101,7 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.Unmarshal(b, &payload)
 	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
