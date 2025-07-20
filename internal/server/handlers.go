@@ -248,6 +248,7 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 		b, err = gzipDecompress(b)
 		if err != nil {
+			logger.Error("failed to decompress data", zap.Error(err))
 			http.Error(w, "failed to decompress data: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
