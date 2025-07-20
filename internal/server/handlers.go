@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"metricapp/internal/logger"
+	models "metricapp/internal/model"
 	"metricapp/internal/repository"
 	"net/http"
 
@@ -89,7 +90,14 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	v, _ := h.storage.GetCounter(metrics.ID)
+	var v any
+	switch metrics.Type {
+	case models.Gauge:
+		v, _ = h.storage.GetField(metrics.ID)
+	case models.Counter:
+		v, _ = h.storage.GetCounter(metrics.ID)
+	}
+
 	resp := make(map[string]any)
 	resp["id"] = metrics.ID
 	resp["type"] = metrics.Type
