@@ -213,3 +213,63 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(b)
 }
+
+func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "error to read request body", http.StatusInternalServerError)
+		return
+	}
+
+	var payload struct {
+		ID   string `json:"id"`
+		Type string `json:"type"`
+	}
+	err = json.Unmarshal(b, &payload)
+	if err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	switch payload.Type {
+	case models.Gauge:
+		v, ok := h.storage.GetField(payload.ID)
+		if !ok {
+			http.Error(w, "unknown metric", http.StatusNotFound)
+			return
+		}
+
+		resp := struct {
+			ID    string  `json:"id"`
+			Type  string  `json:"type"`
+			Value float64 `json:"value"`
+		}{
+			ID:    payload.ID,
+			Type:  payload.Type,
+			Value: v,
+		}
+
+		b, _ := json.Marshal(resp)
+		w.Write(b)
+
+	case models.Counter:
+		v, ok := h.storage.GetCounter(payload.ID)
+		if !ok {
+			http.Error(w, "unknown metric", http.StatusNotFound)
+			return
+		}
+
+		resp := struct {
+			ID    string `json:"id"`
+			Type  string `json:"type"`
+			Value int64  `json:"value"`
+		}{
+			ID:    payload.ID,
+			Type:  payload.Type,
+			Value: v,
+		}
+
+		b, _ := json.Marshal(resp)
+		w.Write(b)
+	}
+}

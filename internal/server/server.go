@@ -40,7 +40,7 @@ func (ms *MetricServer) Start() {
 		r.Get("/value/{mType}/{mName}", handler.GetMetric)
 
 		r.Post("/update/", handler.UpdateMetricsWJSONv2)
-		r.Post("/value/", handler.GetMetricWJSON)
+		r.Post("/value/", handler.GetMetricWJSONv2)
 	})
 
 	logger.Info(
