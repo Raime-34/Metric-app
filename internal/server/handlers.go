@@ -225,17 +225,16 @@ func gzipDecompress(data []byte) ([]byte, error) {
 	}
 	defer gr.Close()
 
-	var out bytes.Buffer
-	_, err = io.Copy(&out, gr)
+	b, err := io.ReadAll(gr)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Info(
 		"decomressed",
-		zap.String("msg", out.String()),
+		zap.String("msg", string(b)),
 	)
-	return out.Bytes(), nil
+	return b, nil
 }
 
 func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
