@@ -39,6 +39,10 @@ func (ms *MetricServer) Start() {
 	router.Use(requestLogger)
 
 	router.Route("/", func(r chi.Router) {
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			logger.Info("????????")
+		})
+
 		r.Post("/update/{mType}/{mName}/{mValue}", handler.UpdateMetrics)
 		r.Get("/value/{mType}/{mName}", handler.GetMetric)
 
