@@ -231,6 +231,10 @@ func gzipDecompress(data []byte) ([]byte, error) {
 		return nil, err
 	}
 
+	logger.Info(
+		"decomressed",
+		zap.String("msg", out.String()),
+	)
 	return out.Bytes(), nil
 }
 
