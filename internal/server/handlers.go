@@ -59,7 +59,7 @@ func (h *MetricHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
 func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "error to read request body", http.StatusInternalServerError)
+		http.Error(w, "error to read request body: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer r.Body.Close()
