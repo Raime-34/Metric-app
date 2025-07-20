@@ -3,10 +3,12 @@ package server
 import (
 	"encoding/json"
 	"io"
+	"metricapp/internal/logger"
 	"metricapp/internal/repository"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 )
 
 type MetricHandler struct {
@@ -86,6 +88,11 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	}
+
+	logger.Info(
+		"UPDATE",
+		zap.Any("metric", metrics),
+	)
 }
 
 func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
@@ -113,6 +120,11 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 		ID:   payload.ID,
 		Type: payload.Type,
 	}
+
+	logger.Info(
+		"READ",
+		zap.Any("payload", payload),
+	)
 
 	if payload.ID == "PollCount" {
 		payload.ID = "PollCounter"

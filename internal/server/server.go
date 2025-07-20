@@ -2,7 +2,6 @@ package server
 
 import (
 	"flag"
-	"io"
 	"metricapp/internal/logger"
 	"net/http"
 	"time"
@@ -80,8 +79,6 @@ func requestLogger(next http.Handler) http.Handler {
 	logFn := func(w http.ResponseWriter, r *http.Request) {
 		uri := r.RequestURI
 		method := r.Method
-		b, _ := io.ReadAll(r.Body)
-		// r.Body.Close()
 
 		start := time.Now()
 		responseData := &responseData{
@@ -102,7 +99,6 @@ func requestLogger(next http.Handler) http.Handler {
 			zap.Duration("Duration", duration),
 			zap.Int("Status", responseData.status),
 			zap.Int("Response size", responseData.size),
-			zap.String("Req", string(b)),
 			zap.String("Resp", responseData.msg),
 		)
 	}
