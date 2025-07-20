@@ -151,7 +151,7 @@ func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Requ
 		var cMetrics struct {
 			ID    string `json:"id"`
 			Type  string `json:"type"`
-			Value int64  `json:"value"`
+			Value int64  `json:"delta"`
 		}
 
 		err := json.Unmarshal(b, &cMetrics)
