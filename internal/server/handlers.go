@@ -9,7 +9,6 @@ import (
 	models "metricapp/internal/model"
 	"metricapp/internal/repository"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -244,16 +243,16 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
-		b, err = gzipDecompress(b)
-		if err != nil {
-			logger.Error("failed to decompress data", zap.Error(err))
-			http.Error(w, "failed to decompress data: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		logger.Info("bruh")
-	}
+	// if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
+	// 	b, err = gzipDecompress(b)
+	// 	if err != nil {
+	// 		logger.Error("failed to decompress data", zap.Error(err))
+	// 		http.Error(w, "failed to decompress data: "+err.Error(), http.StatusInternalServerError)
+	// 		return
+	// 	}
+	// } else {
+	// 	logger.Info("bruh")
+	// }
 
 	var payload struct {
 		ID   string `json:"id"`
