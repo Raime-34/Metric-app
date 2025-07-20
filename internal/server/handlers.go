@@ -250,6 +250,7 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 		}
 
 		b, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
 		w.Write(b)
 
 	case models.Counter:
@@ -270,6 +271,7 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 		}
 
 		b, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
 		w.Write(b)
 	}
 }
