@@ -112,6 +112,61 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 	)
 }
 
+func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Request) {
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "error to read request body: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close()
+
+	var metrics struct {
+		ID    string `json:"id"`
+		Type  string `json:"type"`
+		Value any    `json:"value"`
+	}
+	err = json.Unmarshal(b, &metrics)
+	if err != nil {
+		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	switch metrics.Type {
+	case models.Gauge:
+		var gMetrics struct {
+			ID    string  `json:"id"`
+			Type  string  `json:"type"`
+			Value float64 `json:"value"`
+		}
+
+		err := json.Unmarshal(b, &gMetrics)
+		if err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		h.storage.SetField(gMetrics.ID, gMetrics.Value)
+
+	case models.Counter:
+		var cMetrics struct {
+			ID    string `json:"id"`
+			Type  string `json:"type"`
+			Value int64  `json:"value"`
+		}
+
+		err := json.Unmarshal(b, &cMetrics)
+		if err != nil {
+			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		h.storage.IncrementCounter(struct {
+			Name  string
+			Delta int64
+		}{Name: cMetrics.ID, Delta: cMetrics.Value})
+	}
+}
+
 func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
