@@ -10,6 +10,7 @@ COPY internal/agent internal/agent
 COPY internal/logger internal/logger
 COPY internal/model internal/model
 COPY internal/repository internal/repository
+COPY internal/zip internal/zip
 
 RUN go build -o agent ./cmd/agent
 
