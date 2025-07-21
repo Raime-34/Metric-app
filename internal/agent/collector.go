@@ -130,20 +130,6 @@ func (mc *MetricCollector) collect() {
 	mc.repo.IncrementCounter()
 }
 
-type (
-	gMetric struct {
-		ID    string  `json:"id"`
-		Type  string  `json:"type"`
-		Value float64 `json:"value"`
-	}
-
-	cMetric struct {
-		ID    string `json:"id"`
-		Type  string `json:"type"`
-		Value int64  `json:"delta"`
-	}
-)
-
 func (mc *MetricCollector) sendMetrics() {
 	logger.Info("Sending data to server...")
 	metrics := mc.repo.GetFields()
@@ -156,10 +142,10 @@ func (mc *MetricCollector) sendMetrics() {
 
 		// url := fmt.Sprintf("http://%s/update/%s/%s/%v", mc.reportHost, metric.MType, metric.ID, *metric.Value)
 		url := fmt.Sprintf("http://%s/update/", mc.reportHost)
-		payload := gMetric{
+		payload := models.Metrics{
 			ID:    metric.ID,
-			Type:  metric.MType,
-			Value: *metric.Value,
+			MType: metric.MType,
+			Value: metric.Value,
 		}
 		b, _ := json.Marshal(payload)
 		b, _ = zip.GzipCompress(b)
@@ -177,10 +163,10 @@ func (mc *MetricCollector) sendMetrics() {
 
 	// Отдельно отправляем счетчик
 	metric := metrics["PollCounter"]
-	payload := cMetric{
+	payload := models.Metrics{
 		ID:    metric.ID,
-		Type:  metric.MType,
-		Value: *metric.Delta,
+		MType: metric.MType,
+		Delta: metric.Delta,
 	}
 	b, _ := json.Marshal(payload)
 	b, _ = zip.GzipCompress(b)
@@ -195,10 +181,10 @@ func (mc *MetricCollector) sendMetrics() {
 		defer resp.Body.Close()
 	}
 
-	payload = cMetric{
+	payload = models.Metrics{
 		ID:    "PollCount",
-		Type:  metric.MType,
-		Value: *metric.Delta,
+		MType: metric.MType,
+		Delta: metric.Delta,
 	}
 	b, _ = json.Marshal(payload)
 	b, _ = zip.GzipCompress(b)
