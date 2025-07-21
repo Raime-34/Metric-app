@@ -2,7 +2,6 @@ package agent
 
 import (
 	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -10,6 +9,7 @@ import (
 	"metricapp/internal/logger"
 	models "metricapp/internal/model"
 	"metricapp/internal/repository"
+	"metricapp/internal/zip"
 	"net/http"
 	"os"
 	"os/signal"
@@ -130,6 +130,20 @@ func (mc *MetricCollector) collect() {
 	mc.repo.IncrementCounter()
 }
 
+type (
+	gMetric struct {
+		ID    string  `json:"id"`
+		Type  string  `json:"type"`
+		Value float64 `json:"value"`
+	}
+
+	cMetric struct {
+		ID    string `json:"id"`
+		Type  string `json:"type"`
+		Value int64  `json:"value"`
+	}
+)
+
 func (mc *MetricCollector) sendMetrics() {
 	logger.Info("Sending data to server...")
 	metrics := mc.repo.GetFields()
@@ -142,17 +156,13 @@ func (mc *MetricCollector) sendMetrics() {
 
 		// url := fmt.Sprintf("http://%s/update/%s/%s/%v", mc.reportHost, metric.MType, metric.ID, *metric.Value)
 		url := fmt.Sprintf("http://%s/update/", mc.reportHost)
-		payload := struct {
-			ID    string  `json:"id"`
-			Type  string  `json:"type"`
-			Value float64 `json:"value"`
-		}{
+		payload := gMetric{
 			ID:    metric.ID,
 			Type:  metric.MType,
 			Value: *metric.Value,
 		}
 		b, _ := json.Marshal(payload)
-		b, _ = gzipCompress(b)
+		b, _ = zip.GzipCompress(b)
 		r := bytes.NewReader(b)
 
 		req, _ := http.NewRequest(http.MethodPost, url, r)
@@ -167,17 +177,13 @@ func (mc *MetricCollector) sendMetrics() {
 
 	// Отдельно отправляем счетчик
 	metric := metrics["PollCounter"]
-	payload := struct {
-		ID    string `json:"id"`
-		Type  string `json:"type"`
-		Value int64  `json:"delta"`
-	}{
+	payload := cMetric{
 		ID:    metric.ID,
 		Type:  metric.MType,
 		Value: *metric.Delta,
 	}
 	b, _ := json.Marshal(payload)
-	b, _ = gzipCompress(b)
+	b, _ = zip.GzipCompress(b)
 	r := bytes.NewReader(b)
 
 	url := fmt.Sprintf("http://%s/update/", mc.reportHost)
@@ -190,11 +196,7 @@ func (mc *MetricCollector) sendMetrics() {
 		defer resp.Body.Close()
 	}
 
-	payload = struct {
-		ID    string `json:"id"`
-		Type  string `json:"type"`
-		Value int64  `json:"delta"`
-	}{
+	payload = cMetric{
 		ID:    "PollCount",
 		Type:  metric.MType,
 		Value: *metric.Delta,
@@ -208,21 +210,4 @@ func (mc *MetricCollector) sendMetrics() {
 	if err == nil {
 		defer resp.Body.Close()
 	}
-}
-
-func gzipCompress(data []byte) ([]byte, error) {
-	var buf bytes.Buffer
-	gw := gzip.NewWriter(&buf)
-
-	_, err := gw.Write(data)
-	if err != nil {
-		return nil, err
-	}
-
-	err = gw.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
 }

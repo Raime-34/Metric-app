@@ -1,8 +1,6 @@
 package server
 
 import (
-	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"io"
 	"metricapp/internal/logger"
@@ -80,9 +78,6 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// if metrics.ID == "PollCount" {
-	// 	metrics.ID = "PollCounter"
-	// }
 	if err := h.storage.ProcessMetric(metrics); err != nil {
 		switch err {
 		case repository.ErrMetricIsRequired:
@@ -200,9 +195,6 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 		zap.Any("payload", payload),
 	)
 
-	// if payload.ID == "PollCount" {
-	// 	payload.ID = "PollCounter"
-	// }
 	_, v, err := h.storage.ProcessGetField(payload.ID, payload.Type)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -216,43 +208,12 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func gzipDecompress(data []byte) ([]byte, error) {
-	buf := bytes.NewReader(data)
-	gr, err := gzip.NewReader(buf)
-	if err != nil {
-		return nil, err
-	}
-	defer gr.Close()
-
-	b, err := io.ReadAll(gr)
-	if err != nil {
-		return nil, err
-	}
-
-	logger.Info(
-		"decomressed",
-		zap.ByteString("msg", b),
-	)
-	return b, nil
-}
-
 func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "error to read request body", http.StatusInternalServerError)
 		return
 	}
-
-	// if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
-	// 	b, err = gzipDecompress(b)
-	// 	if err != nil {
-	// 		logger.Error("failed to decompress data", zap.Error(err))
-	// 		http.Error(w, "failed to decompress data: "+err.Error(), http.StatusInternalServerError)
-	// 		return
-	// 	}
-	// } else {
-	// 	logger.Info("bruh")
-	// }
 
 	var payload struct {
 		ID   string `json:"id"`
@@ -273,14 +234,10 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		resp := struct {
-			ID    string  `json:"id"`
-			Type  string  `json:"type"`
-			Value float64 `json:"value"`
-		}{
+		resp := models.Metrics{
 			ID:    payload.ID,
-			Type:  payload.Type,
-			Value: v,
+			MType: payload.Type,
+			Value: &v,
 		}
 
 		b, _ := json.Marshal(resp)
@@ -294,14 +251,10 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		resp := struct {
-			ID    string `json:"id"`
-			Type  string `json:"type"`
-			Value int64  `json:"delta"`
-		}{
+		resp := models.Metrics{
 			ID:    payload.ID,
-			Type:  payload.Type,
-			Value: v,
+			MType: payload.Type,
+			Delta: &v,
 		}
 
 		b, _ := json.Marshal(resp)
