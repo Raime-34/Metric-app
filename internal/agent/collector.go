@@ -191,7 +191,6 @@ func (mc *MetricCollector) sendMetrics() {
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
-	// resp, err := http.Post(url, "application/json", r)
 	if err == nil {
 		defer resp.Body.Close()
 	}
@@ -206,7 +205,10 @@ func (mc *MetricCollector) sendMetrics() {
 	r = bytes.NewReader(b)
 
 	url = fmt.Sprintf("http://%s/update/", mc.reportHost)
-	resp, err = http.Post(url, "application/json", r)
+	req, _ = http.NewRequest(http.MethodPost, url, r)
+	req.Header.Set("Content-Encoding", "gzip")
+	req.Header.Set("Content-Type", "application/json")
+	resp, err = http.DefaultClient.Do(req)
 	if err == nil {
 		defer resp.Body.Close()
 	}
