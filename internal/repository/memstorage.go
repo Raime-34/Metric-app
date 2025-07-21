@@ -109,6 +109,23 @@ func (ms *MemStorage) GetFields() map[string]float64 {
 	return newMap
 }
 
+func (ms *MemStorage) GetAllMetrics() []models.Metrics {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+
+	metrics := make([]models.Metrics, 0)
+
+	for id, g := range ms.storage {
+		metrics = append(metrics, models.ComposeMetrics(id, models.Gauge, g, 0))
+	}
+
+	for id, c := range ms.counters {
+		metrics = append(metrics, models.ComposeMetrics(id, models.Counter, 0, c))
+	}
+
+	return metrics
+}
+
 func (ms *MemStorage) ProcessGetField(mName string, mType string) ([]byte, any, error) {
 	switch mType {
 	case models.Gauge:

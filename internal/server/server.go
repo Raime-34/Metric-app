@@ -3,8 +3,14 @@ package server
 import (
 	"compress/gzip"
 	"flag"
+	"log"
+	"metricapp/internal/filemanager"
 	"metricapp/internal/logger"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/caarlos0/env"
 	"github.com/go-chi/chi/v5"
@@ -29,15 +35,39 @@ func (ms *MetricServer) Start() {
 		flag.IntVar(&cfg.StoreInterval, "i", 300, "Интервал записи метрик в файл")
 	}
 	if cfg.FileStoragePath == "" {
-		flag.StringVar(&cfg.FileStoragePath, "f", "./logs/metrics.log", "Путь к файлу с сохраненными метрика")
+		flag.StringVar(&cfg.FileStoragePath, "f", "./metrics.log", "Путь к файлу с сохраненными метрика")
 	}
-	if cfg.Restore {
+	if !cfg.Restore {
 		flag.BoolVar(&cfg.Restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
 	}
 	flag.Parse()
 
 	logger.InitLogger()
-	handler := NewMetricHandler()
+
+	fm, err := filemanager.Open(cfg.FileStoragePath, cfg.StoreInterval)
+	if err != nil {
+		log.Fatal("failed to open log file: ", err)
+	}
+	handler := NewMetricHandlerWfm(fm, cfg.Restore)
+	if handler.fm.Storeinterval != 0 {
+		go func() {
+			ticker := time.NewTicker(time.Duration(fm.Storeinterval) * time.Second)
+			sigs := make(chan os.Signal, 1)
+			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+			for {
+				select {
+				case <-ticker.C:
+					fm.Write(handler.storage.GetAllMetrics())
+				case <-sigs:
+					fm.Write(handler.storage.GetAllMetrics())
+					logger.Info("exiting gracefully")
+					fm.Close()
+					os.Exit(0)
+				}
+			}
+		}()
+	}
 
 	router := chi.NewRouter()
 	router.Use(gzipHandler)
@@ -60,7 +90,9 @@ func (ms *MetricServer) Start() {
 		"Start listening",
 		zap.String("port", cfg.Address),
 	)
+
 	http.ListenAndServe(cfg.Address, router)
+	fm.Close()
 }
 
 type (

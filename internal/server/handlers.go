@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"io"
+	"metricapp/internal/filemanager"
 	"metricapp/internal/logger"
 	models "metricapp/internal/model"
 	"metricapp/internal/repository"
@@ -14,6 +15,36 @@ import (
 
 type MetricHandler struct {
 	storage repository.MemStorage
+	fm      *filemanager.FManager
+}
+
+func NewMetricHandlerWfm(fm *filemanager.FManager, restore bool) *MetricHandler {
+	handler := &MetricHandler{
+		storage: repository.NewMemStorage(),
+		fm:      fm,
+	}
+
+	if restore {
+		metrics, err := fm.Read()
+		if err == nil {
+			for _, m := range metrics {
+				switch m.MType {
+				case models.Gauge:
+					handler.storage.SetField(m.ID, *m.Value)
+				case models.Counter:
+					handler.storage.IncrementCounter(struct {
+						Name  string
+						Delta int64
+					}{
+						Name:  m.ID,
+						Delta: *m.Delta,
+					})
+				}
+			}
+		}
+	}
+
+	return handler
 }
 
 func NewMetricHandler() *MetricHandler {
@@ -44,6 +75,26 @@ func (h *MetricHandler) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	}
+
+	if h.fm.Storeinterval == 0 {
+		h.write(h.storage.GetAllMetrics())
+	}
+}
+
+func (h *MetricHandler) write(metrics []models.Metrics) error {
+	if h.fm != nil {
+		return h.fm.Write(metrics)
+	}
+
+	return nil
+}
+
+func (h *MetricHandler) read() ([]models.Metrics, error) {
+	if h.fm != nil {
+		return h.fm.Read()
+	}
+
+	return nil, nil
 }
 
 func (h *MetricHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
@@ -107,6 +158,10 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 		"UPDATE",
 		zap.Any("metric", metrics),
 	)
+
+	if h.fm.Storeinterval == 0 {
+		h.fm.Write(h.storage.GetAllMetrics())
+	}
 }
 
 func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Request) {
