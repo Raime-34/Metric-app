@@ -49,9 +49,9 @@ func (ms *MetricServer) Start() {
 		log.Fatal("failed to open log file: ", err)
 	}
 	handler := NewMetricHandlerWfm(fm, cfg.Restore)
-	if handler.fm.Storeinterval != 0 {
+	if handler.getStoreInterval() != 0 {
 		go func() {
-			ticker := time.NewTicker(time.Duration(fm.Storeinterval) * time.Second)
+			ticker := time.NewTicker(time.Duration(handler.getStoreInterval()) * time.Second)
 			sigs := make(chan os.Signal, 1)
 			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 

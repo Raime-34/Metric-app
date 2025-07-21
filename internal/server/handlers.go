@@ -76,7 +76,7 @@ func (h *MetricHandler) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if h.fm.Storeinterval == 0 {
+	if h.getStoreInterval() == 0 {
 		h.write(h.storage.GetAllMetrics())
 	}
 }
@@ -95,6 +95,14 @@ func (h *MetricHandler) read() ([]models.Metrics, error) {
 	}
 
 	return nil, nil
+}
+
+func (h *MetricHandler) getStoreInterval() int {
+	if h.fm == nil {
+		return 1_000
+	}
+
+	return h.fm.Storeinterval
 }
 
 func (h *MetricHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
@@ -159,7 +167,7 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 		zap.Any("metric", metrics),
 	)
 
-	if h.fm.Storeinterval == 0 {
+	if h.getStoreInterval() == 0 {
 		h.fm.Write(h.storage.GetAllMetrics())
 	}
 }
