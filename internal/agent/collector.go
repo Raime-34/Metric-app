@@ -202,7 +202,7 @@ func (mc *MetricCollector) sendMetrics() {
 		Value: *metric.Delta,
 	}
 	b, _ = json.Marshal(payload)
-
+	b, _ = zip.GzipCompress(b)
 	r = bytes.NewReader(b)
 
 	url = fmt.Sprintf("http://%s/update/", mc.reportHost)
