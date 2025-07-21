@@ -14,18 +14,25 @@ import (
 type MetricServer struct{}
 
 func (ms *MetricServer) Start() {
-	var port string
-
 	var cfg struct {
-		Address string `env:"ADDRESS"`
+		Address         string `env:"ADDRESS"`
+		StoreInterval   int    `env:"STORE_INTERVAL"`
+		FileStoragePath string `env:"FILE_STORAGE_PATH"`
+		Restore         bool   `env:"RESTORE"`
 	}
-	err := env.Parse(&cfg)
-	if err == nil {
-		port = cfg.Address
-	}
+	env.Parse(&cfg)
 
-	if port == "" {
-		flag.StringVar(&port, "a", "0.0.0.0:8080", "Порт на котором будет поднят сервер")
+	if cfg.Address == "" {
+		flag.StringVar(&cfg.Address, "a", "0.0.0.0:8080", "Порт на котором будет поднят сервер")
+	}
+	if cfg.StoreInterval == 0 {
+		flag.IntVar(&cfg.StoreInterval, "i", 300, "Интервал записи метрик в файл")
+	}
+	if cfg.FileStoragePath == "" {
+		flag.StringVar(&cfg.FileStoragePath, "f", "./logs/metrics.log", "Путь к файлу с сохраненными метрика")
+	}
+	if cfg.Restore {
+		flag.BoolVar(&cfg.Restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
 	}
 	flag.Parse()
 
@@ -51,9 +58,9 @@ func (ms *MetricServer) Start() {
 
 	logger.Info(
 		"Start listening",
-		zap.String("port", port),
+		zap.String("port", cfg.Address),
 	)
-	http.ListenAndServe(port, router)
+	http.ListenAndServe(cfg.Address, router)
 }
 
 type (
