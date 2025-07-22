@@ -48,10 +48,24 @@ func TestMetricHandler_UpdateMetricsWJSON(t *testing.T) {
 		metrics["type"] = c.mType
 		switch c.mType {
 		case models.Gauge:
-			parsedValue, _ := strconv.ParseFloat(c.mValue, 64)
+			parsedValue, err := strconv.ParseFloat(c.mValue, 64)
+			if err != nil {
+				if c.expectedCode == http.StatusBadRequest {
+					continue
+				} else {
+					t.Fail()
+				}
+			}
 			metrics["value"] = parsedValue
 		case models.Counter:
-			parsedValue, _ := strconv.ParseInt(c.mValue, 10, 64)
+			parsedValue, err := strconv.ParseInt(c.mValue, 10, 64)
+			if err != nil {
+				if c.expectedCode == http.StatusBadRequest {
+					continue
+				} else {
+					t.Fail()
+				}
+			}
 			metrics["delta"] = parsedValue
 		}
 
@@ -85,44 +99,44 @@ var cases = []testcase{
 		mName:        "test",
 		mValue:       url.PathEscape("500.0"),
 	},
-	// {
-	// 	name:         "valid counter case",
-	// 	expectedCode: http.StatusOK,
-	// 	mType:        models.Counter,
-	// 	mName:        "pollCounter",
-	// 	mValue:       "5",
-	// },
-	// {
-	// 	name:         "invalid gauge, without name",
-	// 	expectedCode: http.StatusNotFound,
-	// 	mType:        models.Gauge,
-	// 	mValue:       "500",
-	// },
-	// {
-	// 	name:         "invalid counter, without name",
-	// 	expectedCode: http.StatusNotFound,
-	// 	mType:        models.Counter,
-	// 	mValue:       "500",
-	// },
-	// {
-	// 	name:         "invalid gauge, wrong value",
-	// 	expectedCode: http.StatusBadRequest,
-	// 	mName:        "test",
-	// 	mType:        models.Gauge,
-	// 	mValue:       "some string",
-	// },
-	// {
-	// 	name:         "invalid counter, wrong value",
-	// 	expectedCode: http.StatusBadRequest,
-	// 	mName:        "test",
-	// 	mType:        models.Counter,
-	// 	mValue:       "some string",
-	// },
-	// {
-	// 	name:         "invalid metric",
-	// 	expectedCode: http.StatusBadRequest,
-	// 	mName:        "test",
-	// 	mType:        "some string",
-	// 	mValue:       "500",
-	// },
+	{
+		name:         "valid counter case",
+		expectedCode: http.StatusOK,
+		mType:        models.Counter,
+		mName:        "pollCounter",
+		mValue:       "5",
+	},
+	{
+		name:         "invalid gauge, without name",
+		expectedCode: http.StatusNotFound,
+		mType:        models.Gauge,
+		mValue:       "500",
+	},
+	{
+		name:         "invalid counter, without name",
+		expectedCode: http.StatusNotFound,
+		mType:        models.Counter,
+		mValue:       "500",
+	},
+	{
+		name:         "invalid gauge, wrong value",
+		expectedCode: http.StatusBadRequest,
+		mName:        "test",
+		mType:        models.Gauge,
+		mValue:       "some string",
+	},
+	{
+		name:         "invalid counter, wrong value",
+		expectedCode: http.StatusBadRequest,
+		mName:        "test",
+		mType:        models.Counter,
+		mValue:       "some string",
+	},
+	{
+		name:         "invalid metric",
+		expectedCode: http.StatusBadRequest,
+		mName:        "test",
+		mType:        "some string",
+		mValue:       "500",
+	},
 }
