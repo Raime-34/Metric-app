@@ -49,25 +49,6 @@ func (ms *MetricServer) Start() {
 		log.Fatal("failed to open log file: ", err)
 	}
 	handler := NewMetricHandlerWfm(fm, cfg.Restore)
-	if handler.getStoreInterval() != 0 {
-		go func() {
-			ticker := time.NewTicker(time.Duration(handler.getStoreInterval()) * time.Second)
-			sigs := make(chan os.Signal, 1)
-			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-			for {
-				select {
-				case <-ticker.C:
-					fm.Write(handler.storage.GetAllMetrics())
-				case <-sigs:
-					fm.Write(handler.storage.GetAllMetrics())
-					logger.Info("exiting gracefully")
-					fm.Close()
-					os.Exit(0)
-				}
-			}
-		}()
-	}
 
 	router := chi.NewRouter()
 	router.Use(gzipHandler)
@@ -91,8 +72,25 @@ func (ms *MetricServer) Start() {
 		zap.String("port", cfg.Address),
 	)
 
-	http.ListenAndServe(cfg.Address, router)
-	fm.Close()
+	go http.ListenAndServe(cfg.Address, router)
+	defer fm.Close()
+
+	if handler.getStoreInterval() != 0 {
+		ticker := time.NewTicker(time.Duration(handler.getStoreInterval()) * time.Second)
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+		for {
+			select {
+			case <-ticker.C:
+				fm.Write(handler.storage.GetAllMetrics())
+			case <-sigs:
+				fm.Write(handler.storage.GetAllMetrics())
+				logger.Info("exiting gracefully")
+				os.Exit(0)
+			}
+		}
+	}
 }
 
 type (
