@@ -121,10 +121,19 @@ func (h *MetricHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
 func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "error to read request body: "+err.Error(), http.StatusInternalServerError)
+		code := http.StatusInternalServerError
+		http.Error(w, http.StatusText(code), code)
 		return
 	}
-	defer r.Body.Close()
+	defer func() {
+		err := r.Body.Close()
+		if err != nil {
+			logger.Error(
+				"failed to close request body",
+				zap.Error(err),
+			)
+		}
+	}()
 
 	var metrics struct {
 		ID    string `json:"id"`
@@ -133,7 +142,8 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 	}
 	err = json.Unmarshal(b, &metrics)
 	if err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		code := http.StatusBadRequest
+		http.Error(w, http.StatusText(code), code)
 		return
 	}
 
@@ -175,10 +185,19 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "error to read request body: "+err.Error(), http.StatusInternalServerError)
+		code := http.StatusInternalServerError
+		http.Error(w, http.StatusText(code), code)
 		return
 	}
-	defer r.Body.Close()
+	defer func() {
+		err := r.Body.Close()
+		if err != nil {
+			logger.Error(
+				"failed to close request body",
+				zap.Error(err),
+			)
+		}
+	}()
 
 	var metrics struct {
 		ID    string `json:"id"`
@@ -187,7 +206,8 @@ func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Requ
 	}
 	err = json.Unmarshal(b, &metrics)
 	if err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		code := http.StatusBadRequest
+		http.Error(w, http.StatusText(code), code)
 		return
 	}
 
@@ -201,7 +221,8 @@ func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Requ
 
 		err := json.Unmarshal(b, &gMetrics)
 		if err != nil {
-			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			code := http.StatusBadRequest
+			http.Error(w, http.StatusText(code), code)
 			return
 		}
 
@@ -216,7 +237,8 @@ func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Requ
 
 		err := json.Unmarshal(b, &cMetrics)
 		if err != nil {
-			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			code := http.StatusBadRequest
+			http.Error(w, http.StatusText(code), code)
 			return
 		}
 
@@ -240,7 +262,8 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.Unmarshal(b, &payload)
 	if err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		code := http.StatusBadRequest
+		http.Error(w, http.StatusText(code), code)
 		return
 	}
 
@@ -285,7 +308,8 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 
 	err = json.Unmarshal(b, &payload)
 	if err != nil {
-		http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		code := http.StatusBadRequest
+		http.Error(w, http.StatusText(code), code)
 		return
 	}
 

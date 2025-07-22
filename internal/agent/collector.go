@@ -141,11 +141,24 @@ func (mc *MetricCollector) sendMetrics() {
 			continue
 		}
 
-		deliverMetric(metric, mc.reportHost)
+		err := deliverMetric(metric, mc.reportHost)
+		if err != nil {
+			logger.Error(
+				"failed to send metric",
+				zap.String("ID", metric.ID),
+				zap.Error(err),
+			)
+		}
 	}
 
 	// Отдельно отправляем счетчик
-	deliverMetric(metrics["PollCount"], mc.reportHost)
+	pCount := metrics["PollCount"]
+	err := deliverMetric(pCount, mc.reportHost)
+	logger.Error(
+		"failed to send metric",
+		zap.String("ID", pCount.ID),
+		zap.Error(err),
+	)
 }
 
 func deliverMetric(metric models.Metrics, reportHost string) error {
@@ -157,7 +170,7 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 			zap.Error(err),
 		)
 
-		return err
+		return fmt.Errorf("failed to marshal data", err)
 	}
 
 	b, err = zip.GzipCompress(b)
@@ -168,7 +181,7 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 			zap.Error(err),
 		)
 
-		return err
+		return fmt.Errorf("failed to compress data: %w", err)
 	}
 
 	r := bytes.NewReader(b)
@@ -182,14 +195,23 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 			zap.Error(err),
 		)
 
-		return err
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
-	if err == nil {
-		defer resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("failed to send request: %w", err)
 	}
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			logger.Error(
+				"failed to close response body",
+				zap.Error(err),
+			)
+		}
+	}()
 
-	return err
+	return nil
 }

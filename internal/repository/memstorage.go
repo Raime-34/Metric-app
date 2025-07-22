@@ -85,7 +85,7 @@ func (ms *MemStorage) ProcessMetric(metric struct {
 			Delta: v,
 		})
 	default:
-		return ErrUnknownMetricType
+		return fmt.Errorf("unknown metric type: %s", metric.Type)
 	}
 
 	return nil

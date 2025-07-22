@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 func TestMemeStorage_UpdateMetrics(t *testing.T) {
@@ -33,7 +34,13 @@ func TestMemeStorage_UpdateMetrics(t *testing.T) {
 
 		res := w.Result()
 		assert.Equal(t, c.expectedCode, res.StatusCode)
-		res.Body.Close()
+		err := res.Body.Close()
+		if err != nil {
+			logger.Error(
+				"failed to close response body",
+				zap.Error(err),
+			)
+		}
 	}
 }
 
@@ -79,7 +86,13 @@ func TestMetricHandler_UpdateMetricsWJSON(t *testing.T) {
 
 		res := w.Result()
 		assert.Equal(t, c.expectedCode, res.StatusCode)
-		res.Body.Close()
+		err := res.Body.Close()
+		if err != nil {
+			logger.Error(
+				"failed to close response body",
+				zap.Error(err),
+			)
+		}
 	}
 }
 

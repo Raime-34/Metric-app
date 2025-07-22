@@ -19,7 +19,15 @@ func gzipHandler(next http.Handler) http.Handler {
 				http.Error(w, "invalid gzip body", http.StatusBadRequest)
 				return
 			}
-			defer gz.Close()
+			defer func() {
+				err := gz.Close()
+				if err != nil {
+					logger.Error(
+						"failed to close gzip reader",
+						zap.Error(err),
+					)
+				}
+			}()
 			r.Body = gz
 		}
 
@@ -27,7 +35,13 @@ func gzipHandler(next http.Handler) http.Handler {
 		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			w.Header().Set("Content-Encoding", "gzip")
 			gz := gzip.NewWriter(w)
-			defer gz.Close()
+			defer func() {
+				err := gz.Close()
+				logger.Error(
+					"failed to close gzip writer",
+					zap.Error(err),
+				)
+			}()
 			grw := gzipResponseWriter{ResponseWriter: w, Writer: gz}
 			next.ServeHTTP(grw, r)
 			return
