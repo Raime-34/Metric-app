@@ -170,7 +170,7 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 			zap.Error(err),
 		)
 
-		return fmt.Errorf("failed to marshal data", err)
+		return fmt.Errorf("failed to marshal data: %w", err)
 	}
 
 	b, err = zip.GzipCompress(b)
