@@ -152,7 +152,8 @@ func (mc *MetricCollector) sendMetrics() {
 	}
 
 	// Отдельно отправляем счетчик
-	pCount := metrics["PollCount"]
+	pCount := metrics["PollCounter"]
+	pCount.ID = "PollCount"
 	err := deliverMetric(pCount, mc.reportHost)
 	logger.Error(
 		"failed to send metric",
@@ -166,7 +167,7 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 	if err != nil {
 		logger.Error(
 			"failed to marshal struct",
-			zap.String("ID", "PollCount"),
+			zap.String("ID", metric.ID),
 			zap.Error(err),
 		)
 
@@ -177,7 +178,7 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 	if err != nil {
 		logger.Error(
 			"failed to compress data",
-			zap.String("ID", "PollCount"),
+			zap.String("ID", metric.ID),
 			zap.Error(err),
 		)
 
@@ -191,7 +192,7 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 	if err != nil {
 		logger.Error(
 			"failed to crate request",
-			zap.String("ID", "PollCount"),
+			zap.String("ID", metric.ID),
 			zap.Error(err),
 		)
 
