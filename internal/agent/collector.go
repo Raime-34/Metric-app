@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/caarlos0/env/v11"
+	"go.uber.org/zap"
 )
 
 type MetricCollector struct {
@@ -140,40 +141,49 @@ func (mc *MetricCollector) sendMetrics() {
 			continue
 		}
 
-		// url := fmt.Sprintf("http://%s/update/%s/%s/%v", mc.reportHost, metric.MType, metric.ID, *metric.Value)
-		url := fmt.Sprintf("http://%s/update/", mc.reportHost)
-		payload := models.Metrics{
-			ID:    metric.ID,
-			MType: metric.MType,
-			Value: metric.Value,
-		}
-		b, _ := json.Marshal(payload)
-		b, _ = zip.GzipCompress(b)
-		r := bytes.NewReader(b)
-
-		req, _ := http.NewRequest(http.MethodPost, url, r)
-		req.Header.Set("Content-Encoding", "gzip")
-		req.Header.Set("Content-Type", "application/json")
-		resp, err := http.DefaultClient.Do(req)
-		// resp, err := http.Post(url, "application/json", r)
-		if err == nil {
-			defer resp.Body.Close()
-		}
+		deliverMetric(metric, mc.reportHost)
 	}
 
 	// Отдельно отправляем счетчик
-	metric := metrics["PollCounter"]
-	payload := models.Metrics{
-		ID:    metric.ID,
-		MType: metric.MType,
-		Delta: metric.Delta,
+	deliverMetric(metrics["PollCount"], mc.reportHost)
+}
+
+func deliverMetric(metric models.Metrics, reportHost string) error {
+	b, err := json.Marshal(metric)
+	if err != nil {
+		logger.Error(
+			"failed to marshal struct",
+			zap.String("ID", "PollCount"),
+			zap.Error(err),
+		)
+
+		return err
 	}
-	b, _ := json.Marshal(payload)
-	b, _ = zip.GzipCompress(b)
+
+	b, err = zip.GzipCompress(b)
+	if err != nil {
+		logger.Error(
+			"failed to compress data",
+			zap.String("ID", "PollCount"),
+			zap.Error(err),
+		)
+
+		return err
+	}
+
 	r := bytes.NewReader(b)
 
-	url := fmt.Sprintf("http://%s/update/", mc.reportHost)
-	req, _ := http.NewRequest(http.MethodPost, url, r)
+	url := fmt.Sprintf("http://%s/update/", reportHost)
+	req, err := http.NewRequest(http.MethodPost, url, r)
+	if err != nil {
+		logger.Error(
+			"failed to crate request",
+			zap.String("ID", "PollCount"),
+			zap.Error(err),
+		)
+
+		return err
+	}
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
@@ -181,21 +191,5 @@ func (mc *MetricCollector) sendMetrics() {
 		defer resp.Body.Close()
 	}
 
-	payload = models.Metrics{
-		ID:    "PollCount",
-		MType: metric.MType,
-		Delta: metric.Delta,
-	}
-	b, _ = json.Marshal(payload)
-	b, _ = zip.GzipCompress(b)
-	r = bytes.NewReader(b)
-
-	url = fmt.Sprintf("http://%s/update/", mc.reportHost)
-	req, _ = http.NewRequest(http.MethodPost, url, r)
-	req.Header.Set("Content-Encoding", "gzip")
-	req.Header.Set("Content-Type", "application/json")
-	resp, err = http.DefaultClient.Do(req)
-	if err == nil {
-		defer resp.Body.Close()
-	}
+	return err
 }
