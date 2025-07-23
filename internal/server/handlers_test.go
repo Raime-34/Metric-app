@@ -60,7 +60,7 @@ func TestMetricHandler_UpdateMetricsWJSON(t *testing.T) {
 				if c.expectedCode == http.StatusBadRequest {
 					continue
 				} else {
-					t.Fail()
+					t.Errorf("unexpected error occurred: %v", err)
 				}
 			}
 			metrics["value"] = parsedValue
@@ -70,7 +70,7 @@ func TestMetricHandler_UpdateMetricsWJSON(t *testing.T) {
 				if c.expectedCode == http.StatusBadRequest {
 					continue
 				} else {
-					t.Fail()
+					t.Errorf("unexpected error occurred: %v", err)
 				}
 			}
 			metrics["delta"] = parsedValue
