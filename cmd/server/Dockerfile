@@ -10,6 +10,7 @@ COPY internal/logger internal/logger
 COPY internal/model internal/model
 COPY internal/repository internal/repository
 COPY internal/server internal/server
+COPY internal/filemanager internal/filemanager
 
 RUN go build -o server ./cmd/server
 

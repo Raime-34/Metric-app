@@ -32,7 +32,12 @@ func (s *AgentMemStorage) GetFields() map[string]models.Metrics {
 		newMap[k] = v
 	}
 
+	s.refreshPollCounter()
 	return newMap
+}
+
+func (s *AgentMemStorage) refreshPollCounter() {
+	s.metrics["PollCounter"] = models.ComposeMetrics("PollCounter", models.Counter, 0, 0)
 }
 
 func (s *AgentMemStorage) IncrementCounter(n ...struct {
