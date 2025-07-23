@@ -165,23 +165,11 @@ func (mc *MetricCollector) sendMetrics() {
 func deliverMetric(metric models.Metrics, reportHost string) error {
 	b, err := json.Marshal(metric)
 	if err != nil {
-		logger.Error(
-			"failed to marshal struct",
-			zap.String("ID", metric.ID),
-			zap.Error(err),
-		)
-
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
 
 	b, err = zip.GzipCompress(b)
 	if err != nil {
-		logger.Error(
-			"failed to compress data",
-			zap.String("ID", metric.ID),
-			zap.Error(err),
-		)
-
 		return fmt.Errorf("failed to compress data: %w", err)
 	}
 
@@ -190,12 +178,6 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 	url := fmt.Sprintf("http://%s/update/", reportHost)
 	req, err := http.NewRequest(http.MethodPost, url, r)
 	if err != nil {
-		logger.Error(
-			"failed to crate request",
-			zap.String("ID", metric.ID),
-			zap.Error(err),
-		)
-
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Encoding", "gzip")
