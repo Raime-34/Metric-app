@@ -75,22 +75,27 @@ func (ms *MetricServer) Start() {
 	go http.ListenAndServe(cfg.Address, router)
 	defer fm.Close()
 
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	var tickerC <-chan time.Time // STORE_INTERVAL = 0 -> tickerC = nil -> не будет тикать
 	if handler.getStoreInterval() != 0 {
 		ticker := time.NewTicker(time.Duration(handler.getStoreInterval()) * time.Second)
-		sigs := make(chan os.Signal, 1)
-		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+		tickerC = ticker.C
+	}
 
-		for {
-			select {
-			case <-ticker.C:
-				fm.Write(handler.storage.GetAllMetrics())
-			case <-sigs:
-				fm.Write(handler.storage.GetAllMetrics())
-				logger.Info("exiting gracefully")
-				os.Exit(0)
-			}
+outerLoop:
+	for {
+		select {
+		case <-tickerC:
+			fm.Write(handler.storage.GetAllMetrics())
+		case <-sigs:
+			fm.Write(handler.storage.GetAllMetrics())
+			logger.Info("exiting gracefully")
+			break outerLoop
 		}
 	}
+
+	os.Exit(0)
 }
 
 type (
