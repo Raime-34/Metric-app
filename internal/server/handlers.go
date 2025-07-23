@@ -18,6 +18,11 @@ type MetricHandler struct {
 	fm      *filemanager.FManager
 }
 
+const (
+	errInternal = http.StatusInternalServerError
+	errBadReq   = http.StatusBadRequest
+)
+
 func NewMetricHandlerWfm(fm *filemanager.FManager, restore bool) *MetricHandler {
 	handler := &MetricHandler{
 		storage: repository.NewMemStorage(),
@@ -121,8 +126,7 @@ func (h *MetricHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
 func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		code := http.StatusInternalServerError
-		http.Error(w, http.StatusText(code), code)
+		http.Error(w, http.StatusText(errInternal), errInternal)
 		return
 	}
 	defer func() {
@@ -142,8 +146,7 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 	}
 	err = json.Unmarshal(b, &metrics)
 	if err != nil {
-		code := http.StatusBadRequest
-		http.Error(w, http.StatusText(code), code)
+		http.Error(w, http.StatusText(errBadReq), errBadReq)
 		return
 	}
 
@@ -185,8 +188,7 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		code := http.StatusInternalServerError
-		http.Error(w, http.StatusText(code), code)
+		http.Error(w, http.StatusText(errInternal), errInternal)
 		return
 	}
 	defer func() {
@@ -206,8 +208,7 @@ func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Requ
 	}
 	err = json.Unmarshal(b, &metrics)
 	if err != nil {
-		code := http.StatusBadRequest
-		http.Error(w, http.StatusText(code), code)
+		http.Error(w, http.StatusText(errBadReq), errBadReq)
 		return
 	}
 
@@ -221,8 +222,7 @@ func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Requ
 
 		err := json.Unmarshal(b, &gMetrics)
 		if err != nil {
-			code := http.StatusBadRequest
-			http.Error(w, http.StatusText(code), code)
+			http.Error(w, http.StatusText(errBadReq), errBadReq)
 			return
 		}
 
@@ -237,8 +237,7 @@ func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Requ
 
 		err := json.Unmarshal(b, &cMetrics)
 		if err != nil {
-			code := http.StatusBadRequest
-			http.Error(w, http.StatusText(code), code)
+			http.Error(w, http.StatusText(errBadReq), errBadReq)
 			return
 		}
 
@@ -262,8 +261,7 @@ func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.Unmarshal(b, &payload)
 	if err != nil {
-		code := http.StatusBadRequest
-		http.Error(w, http.StatusText(code), code)
+		http.Error(w, http.StatusText(errBadReq), errBadReq)
 		return
 	}
 
@@ -308,8 +306,7 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 
 	err = json.Unmarshal(b, &payload)
 	if err != nil {
-		code := http.StatusBadRequest
-		http.Error(w, http.StatusText(code), code)
+		http.Error(w, http.StatusText(errBadReq), errBadReq)
 		return
 	}
 
