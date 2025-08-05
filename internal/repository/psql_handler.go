@@ -2,11 +2,12 @@ package repository
 
 import (
 	"context"
-	"log"
+	"metricapp/internal/logger"
 	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"go.uber.org/zap"
 )
 
 var (
@@ -22,7 +23,8 @@ func NewPsqlHandler(dsn string) {
 	once.Do(func() {
 		conn, err := pgx.Connect(context.Background(), dsn)
 		if err != nil {
-			log.Fatalf("failed to connect to db: %v", err)
+			logger.Error("failed to connect to db", zap.Error(err))
+			return
 		}
 
 		psqlHandler = &PsqlHandler{
