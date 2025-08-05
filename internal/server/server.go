@@ -73,7 +73,7 @@ func (ms *MetricServer) Start() {
 		r.Post("/update/", handler.UpdateMetricsWJSONv2)
 		r.Post("/value/", handler.GetMetricWJSONv2)
 
-		r.Get("/ping/", handler.PingDB)
+		r.Get("/ping", handler.PingDB)
 	})
 
 	logger.Info(
