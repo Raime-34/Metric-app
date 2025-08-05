@@ -346,3 +346,11 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 		w.Write(b)
 	}
 }
+
+func (h *MetricHandler) PingDB(w http.ResponseWriter, r *http.Request) {
+	err := repository.Ping()
+	if err != nil {
+		http.Error(w, "Error: database is not responding", errInternal)
+		return
+	}
+}
