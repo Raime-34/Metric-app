@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"log"
 	"metricapp/internal/logger"
 	"sync"
 	"time"
@@ -38,13 +37,13 @@ func NewPsqlHandler(dsn string) {
 
 		err = migration()
 		if err != nil {
-			log.Fatalf("failed to make migration: %v", err)
+			logger.Error("failed to make migration", zap.Error(err))
+			return
 		}
 	})
 }
 
 func migration() error {
-	log.Println(psqlHandler.dbClient)
 	conn, err := psqlHandler.dbClient.Conn(context.Background())
 	if err != nil {
 		return err
