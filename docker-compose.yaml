@@ -10,6 +10,8 @@ services:
       - "8080:8080"
     depends_on:
       - postgres
+    volumes:
+      - ./migrations:/app/migrations
 
   agent:
     build: 
@@ -29,7 +31,6 @@ services:
       POSTGRES_DB: metric_db
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./migrations:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
 
