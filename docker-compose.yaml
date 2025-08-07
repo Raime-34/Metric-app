@@ -4,9 +4,12 @@ services:
       dockerfile: ./cmd/server/Dockerfile
       context: .
     container_name: server
+    restart: always
     command: ["./server"]
     ports:
       - "8080:8080"
+    depends_on:
+      - postgres
 
   agent:
     build: 
@@ -26,6 +29,7 @@ services:
       POSTGRES_DB: metric_db
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
 
