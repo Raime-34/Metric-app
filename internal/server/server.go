@@ -6,6 +6,7 @@ import (
 	"log"
 	"metricapp/internal/filemanager"
 	"metricapp/internal/logger"
+	"metricapp/internal/repository"
 	"net/http"
 	"os"
 	"os/signal"
@@ -25,6 +26,8 @@ func (ms *MetricServer) Start() {
 		StoreInterval   int    `env:"STORE_INTERVAL"`
 		FileStoragePath string `env:"FILE_STORAGE_PATH"`
 		Restore         bool   `env:"RESTORE"`
+		DSN             string `env:"DATABASE_DSN"`
+		MigrationPath   string `env:"MIGRATION_PATH"`
 	}
 	env.Parse(&cfg)
 
@@ -37,12 +40,20 @@ func (ms *MetricServer) Start() {
 	if cfg.FileStoragePath == "" {
 		flag.StringVar(&cfg.FileStoragePath, "f", "./metrics.log", "Путь к файлу с сохраненными метрика")
 	}
+	if cfg.DSN == "" {
+		flag.StringVar(&cfg.DSN, "d", "postgres://user:1234@postgres:5432/metric_db", "Параметры подключения к базе даннных")
+	}
+	if cfg.MigrationPath == "" {
+		flag.StringVar(&cfg.MigrationPath, "m", "migrations", "Путь к фалам миграции")
+	}
 	if !cfg.Restore {
 		flag.BoolVar(&cfg.Restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
 	}
 	flag.Parse()
 
 	logger.InitLogger()
+
+	repository.NewPsqlHandler(cfg.DSN, cfg.MigrationPath)
 
 	fm, err := filemanager.Open(cfg.FileStoragePath, cfg.StoreInterval)
 	if err != nil {
@@ -63,8 +74,11 @@ func (ms *MetricServer) Start() {
 		r.Post("/update/{mType}/{mName}/{mValue}", handler.UpdateMetrics)
 		r.Get("/value/{mType}/{mName}", handler.GetMetric)
 
-		r.Post("/update/", handler.UpdateMetricsWJSONv2)
+		r.Post("/update/", handler.UpdateMetricWJSONv2)
+		r.Post("/updates/", handler.UpdateMultyMetrics)
 		r.Post("/value/", handler.GetMetricWJSONv2)
+
+		r.Get("/ping", handler.PingDB)
 	})
 
 	logger.Info(

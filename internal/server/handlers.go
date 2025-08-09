@@ -185,7 +185,7 @@ func (h *MetricHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Request) {
+func (h *MetricHandler) UpdateMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, http.StatusText(errInternal), errInternal)
@@ -245,6 +245,37 @@ func (h *MetricHandler) UpdateMetricsWJSONv2(w http.ResponseWriter, r *http.Requ
 			Name  string
 			Delta int64
 		}{Name: cMetrics.ID, Delta: cMetrics.Value})
+	}
+}
+
+func (h *MetricHandler) UpdateMultyMetrics(w http.ResponseWriter, r *http.Request) {
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, http.StatusText(errInternal), errInternal)
+		return
+	}
+	defer func() {
+		err := r.Body.Close()
+		if err != nil {
+			logger.Error(
+				"failed to close request body",
+				zap.Error(err),
+			)
+		}
+	}()
+
+	var metrics []models.Metrics
+	err = json.Unmarshal(b, &metrics)
+	if err != nil {
+		http.Error(w, "failed to parse data", errBadReq)
+		return
+	}
+
+	err = h.storage.ProcessMultyMetrics(r.Context(), metrics)
+	if err != nil {
+		logger.Error("failed to update m-metrics", zap.Error(err))
+		http.Error(w, "failed to update m-metrics", errInternal)
+		return
 	}
 }
 
@@ -344,5 +375,13 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 		b, _ := json.Marshal(resp)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(b)
+	}
+}
+
+func (h *MetricHandler) PingDB(w http.ResponseWriter, r *http.Request) {
+	err := repository.Ping()
+	if err != nil {
+		http.Error(w, "Error: database is not responding", errInternal)
+		return
 	}
 }

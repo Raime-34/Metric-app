@@ -19,7 +19,7 @@ func TestMetricCollector_Run(t *testing.T) {
 	var n atomic.Uint64
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		n.Add(1)
-		if n.Load() == 28 {
+		if n.Load() == 28 || strings.Contains(r.URL.Path, "updates") {
 			done <- true
 		}
 	}))
