@@ -24,7 +24,7 @@ var (
 )
 
 var (
-	NO_CONNECTION = errors.New("there is no connection to db")
+	ErrNoConnection = errors.New("there is no connection to db")
 )
 
 type PsqlHandler struct {
@@ -87,7 +87,7 @@ func migration(dsn string) error {
 
 func Ping() error {
 	if psqlHandler == nil {
-		return NO_CONNECTION
+		return ErrNoConnection
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -98,7 +98,7 @@ func Ping() error {
 
 func UpdateGauge(key string, value float64) error {
 	if psqlHandler == nil {
-		return NO_CONNECTION
+		return ErrNoConnection
 	}
 
 	rows, err := psqlHandler.conn.Exec(context.Background(),
@@ -126,7 +126,7 @@ func UpdateGauge(key string, value float64) error {
 
 func IncrementCounter(key string, delta int64) error {
 	if psqlHandler == nil {
-		return NO_CONNECTION
+		return ErrNoConnection
 	}
 
 	rows, err := psqlHandler.conn.Exec(context.Background(),
