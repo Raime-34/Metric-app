@@ -3,13 +3,16 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"metricapp/internal/logger"
+	models "metricapp/internal/model"
 	"sync"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
 )
@@ -20,22 +23,22 @@ var (
 )
 
 type PsqlHandler struct {
-	dbClient *sql.DB
+	conn *pgx.Conn
 }
 
 func NewPsqlHandler(dsn string) {
 	once.Do(func() {
-		db, err := sql.Open("pgx", dsn)
+		conn, err := pgx.Connect(context.Background(), dsn)
 		if err != nil {
 			logger.Error("failed to connect to db", zap.Error(err))
 			return
 		}
 
 		psqlHandler = &PsqlHandler{
-			dbClient: db,
+			conn: conn,
 		}
 
-		err = migration()
+		err = migration(dsn)
 		if err != nil {
 			logger.Error("failed to make migration", zap.Error(err))
 			return
@@ -43,25 +46,30 @@ func NewPsqlHandler(dsn string) {
 	})
 }
 
-func migration() error {
-	conn, err := psqlHandler.dbClient.Conn(context.Background())
+func migration(dsn string) error {
+	c, err := sql.Open("pgx", dsn)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect for migration: %w", err)
+	}
+
+	conn, err := c.Conn(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to connect to db: %w", err)
 	}
 
 	driver, err := postgres.WithConnection(context.Background(), conn, &postgres.Config{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create driver: %w", err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance("file:///app/migrations", "postgres", driver)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create migration instance: %w", err)
 	}
 
 	err = m.Up()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update scheme: %w", err)
 	}
 
 	return nil
@@ -71,5 +79,49 @@ func Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	return psqlHandler.dbClient.PingContext(ctx)
+	return psqlHandler.conn.Ping(ctx)
+}
+
+func UpdateGauge(key string, value float64) error {
+	rows, err := psqlHandler.conn.Exec(context.Background(),
+		`INSERT INTO
+		metrics (id, mtype, value)
+		VALUES
+		  ($1, $2, $3)
+		ON CONFLICT (id, mtype) DO
+		UPDATE
+		SET
+  		value = EXCLUDED.value;`,
+		key, models.Gauge, value,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to make query: %w", err)
+	}
+
+	if rows.RowsAffected() == 0 {
+		return fmt.Errorf("rows is not affected")
+	}
+
+	return nil
+}
+
+func IncrementCounter(key string, delta int64) error {
+	rows, err := psqlHandler.conn.Exec(context.Background(),
+		`INSERT INTO public.metrics (id, mtype, delta)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (id)
+		DO UPDATE SET delta = metrics.delta + EXCLUDED.delta`,
+		key, models.Counter, delta,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to update counter: %w", err)
+	}
+
+	if rows.RowsAffected() == 0 {
+		return fmt.Errorf("rows is not affected: %w", err)
+	}
+
+	return nil
 }

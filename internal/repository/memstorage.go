@@ -3,11 +3,14 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"metricapp/internal/logger"
 	models "metricapp/internal/model"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	"go.uber.org/zap"
 )
 
 type MemStorage struct {
@@ -84,6 +87,7 @@ func (ms *MemStorage) ProcessMetric(metric struct {
 			Name:  metric.ID,
 			Delta: v,
 		})
+
 	default:
 		return fmt.Errorf("unknown metric type: %s", metric.Type)
 	}
@@ -95,6 +99,16 @@ func (ms *MemStorage) SetField(key string, value float64) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	ms.storage[key] = value
+
+	err := UpdateGauge(key, value)
+	if err != nil {
+		logger.Error(
+			"failed to UPDATE GAUGE in db",
+			zap.String("id", key),
+			zap.Float64("value", value),
+			zap.Error(err),
+		)
+	}
 }
 
 func (ms *MemStorage) GetFields() map[string]float64 {
@@ -168,7 +182,19 @@ func (ms *MemStorage) IncrementCounter(n ...struct {
 
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
-	ms.counters[n[0].Name] = ms.counters[n[0].Name] + n[0].Delta
+	key := n[0].Name
+	delta := n[0].Delta
+	ms.counters[n[0].Name] = ms.counters[key] + delta
+
+	err := IncrementCounter(key, delta)
+	if err != nil {
+		logger.Error(
+			"failed to INCREMENT COUNTER in db",
+			zap.String("id", key),
+			zap.Int64("value", delta),
+			zap.Error(err),
+		)
+	}
 }
 
 func (ms *MemStorage) GetCounter(name string) (counter int64, ok bool) {
