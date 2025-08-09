@@ -27,6 +27,7 @@ func (ms *MetricServer) Start() {
 		FileStoragePath string `env:"FILE_STORAGE_PATH"`
 		Restore         bool   `env:"RESTORE"`
 		DSN             string `env:"DATABASE_DSN"`
+		MigrationPath   string `env:"MIGRATION_PATH"`
 	}
 	env.Parse(&cfg)
 
@@ -45,11 +46,14 @@ func (ms *MetricServer) Start() {
 	if !cfg.Restore {
 		flag.BoolVar(&cfg.Restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
 	}
+	if cfg.FileStoragePath == "" {
+		flag.StringVar(&cfg.MigrationPath, "m", "migrations", "Путь к фалам миграции")
+	}
 	flag.Parse()
 
 	logger.InitLogger()
 
-	repository.NewPsqlHandler(cfg.DSN)
+	repository.NewPsqlHandler(cfg.DSN, cfg.MigrationPath)
 
 	fm, err := filemanager.Open(cfg.FileStoragePath, cfg.StoreInterval)
 	if err != nil {

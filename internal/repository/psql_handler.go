@@ -31,7 +31,7 @@ type PsqlHandler struct {
 	conn *pgx.Conn
 }
 
-func NewPsqlHandler(dsn string) {
+func NewPsqlHandler(dsn string, mPath string) {
 	once.Do(func() {
 		conn, err := pgx.Connect(context.Background(), dsn)
 		if err != nil {
@@ -48,7 +48,7 @@ func NewPsqlHandler(dsn string) {
 			conn: conn,
 		}
 
-		err = migration(dsn)
+		err = migration(dsn, mPath)
 		if err != nil {
 			logger.Error("failed to make migration", zap.Error(err))
 			return
@@ -56,7 +56,7 @@ func NewPsqlHandler(dsn string) {
 	})
 }
 
-func migration(dsn string) error {
+func migration(dsn string, mPath string) error {
 	c, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return fmt.Errorf("failed to connect for migration: %w", err)
@@ -72,7 +72,7 @@ func migration(dsn string) error {
 		return fmt.Errorf("failed to create driver: %w", err)
 	}
 
-	m, err := migrate.NewWithDatabaseInstance("file:///app/migrations", "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance(fmt.Sprintf("file:///%s", mPath), "postgres", driver)
 	if err != nil {
 		return fmt.Errorf("failed to create migration instance: %w", err)
 	}
