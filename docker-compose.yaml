@@ -1,4 +1,16 @@
 services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: metric_db
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   server:
     build: 
       dockerfile: ./cmd/server/Dockerfile
@@ -21,18 +33,6 @@ services:
     command: ["./agent", "-a", "server:8080"]
     depends_on:
       - server
-
-  postgres:
-    image: postgres:latest
-    restart: always
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: metric_db
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
 
 volumes:
   db_data:
