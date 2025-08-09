@@ -253,10 +253,5 @@ func deliverMetrics(metrics []models.Metrics, reportHost string) error {
 		}
 	}()
 
-	// Опционально: проверяем код ответа
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("unexpected status code from /updates/: %s", resp.Status)
-	}
-
 	return nil
 }
