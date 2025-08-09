@@ -46,8 +46,10 @@ func (ms *MetricServer) Start() {
 	if cfg.MigrationPath == "" {
 		flag.StringVar(&cfg.MigrationPath, "m", "migrations", "Путь к фалам миграции")
 	}
+	var restore bool
+	flag.BoolVar(&restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
 	if !cfg.Restore {
-		flag.BoolVar(&cfg.Restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
+		cfg.Restore = restore
 	}
 	flag.Parse()
 
