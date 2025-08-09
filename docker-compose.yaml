@@ -18,7 +18,7 @@ services:
     container_name: server
     restart: always
     environment:
-      MIGRATION_PATH: app/migrations
+      MIGRATION_PATH: migrations
     command: ["./server"]
     ports:
       - "8080:8080"
