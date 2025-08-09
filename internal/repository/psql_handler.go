@@ -34,6 +34,11 @@ func NewPsqlHandler(dsn string) {
 			return
 		}
 
+		if err := conn.Ping(context.Background()); err != nil {
+			logger.Error("connection to db was not established", zap.Error(err))
+			return
+		}
+
 		psqlHandler = &PsqlHandler{
 			conn: conn,
 		}
@@ -83,6 +88,10 @@ func Ping() error {
 }
 
 func UpdateGauge(key string, value float64) error {
+	if psqlHandler.conn == nil {
+		return nil
+	}
+
 	rows, err := psqlHandler.conn.Exec(context.Background(),
 		`INSERT INTO
 		metrics (id, mtype, value)
@@ -107,6 +116,10 @@ func UpdateGauge(key string, value float64) error {
 }
 
 func IncrementCounter(key string, delta int64) error {
+	if psqlHandler.conn == nil {
+		return nil
+	}
+
 	rows, err := psqlHandler.conn.Exec(context.Background(),
 		`INSERT INTO public.metrics (id, mtype, delta)
 		VALUES ($1, $2, $3)
