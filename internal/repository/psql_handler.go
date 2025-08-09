@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"metricapp/internal/logger"
 	models "metricapp/internal/model"
@@ -20,6 +21,10 @@ import (
 var (
 	psqlHandler *PsqlHandler
 	once        sync.Once
+)
+
+var (
+	NO_CONNECTION = errors.New("there is no connection to db")
 )
 
 type PsqlHandler struct {
@@ -81,6 +86,10 @@ func migration(dsn string) error {
 }
 
 func Ping() error {
+	if psqlHandler == nil {
+		return NO_CONNECTION
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -88,8 +97,8 @@ func Ping() error {
 }
 
 func UpdateGauge(key string, value float64) error {
-	if psqlHandler.conn == nil {
-		return nil
+	if psqlHandler == nil {
+		return NO_CONNECTION
 	}
 
 	rows, err := psqlHandler.conn.Exec(context.Background(),
@@ -116,8 +125,8 @@ func UpdateGauge(key string, value float64) error {
 }
 
 func IncrementCounter(key string, delta int64) error {
-	if psqlHandler.conn == nil {
-		return nil
+	if psqlHandler == nil {
+		return NO_CONNECTION
 	}
 
 	rows, err := psqlHandler.conn.Exec(context.Background(),
