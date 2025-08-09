@@ -200,6 +200,10 @@ type transactionInfo struct {
 }
 
 func InsertBatch(ctx context.Context, metrics []models.Metrics) error {
+	if psqlHandler == nil {
+		return ErrNoConnection
+	}
+
 	tx, err := psqlHandler.conn.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to start transaction: %w", err)
