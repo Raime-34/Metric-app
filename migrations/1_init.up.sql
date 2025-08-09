@@ -5,7 +5,7 @@ CREATE TABLE metrics (
     value DOUBLE PRECISION,
     hash TEXT,
     CHECK (
-        (mtype = 'counter' AND delta IS NOT NULL AND value IS NULL)
-     OR (mtype = 'gauge'   AND value IS NOT NULL AND delta IS NULL)
+        (mtype = 'counter' AND delta IS NOT NULL)
+     OR (mtype = 'gauge'   AND value IS NOT NULL)
     )
 );
