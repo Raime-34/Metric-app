@@ -88,7 +88,7 @@ loop:
 		case <-collectTicker.C:
 			mc.collect()
 		case <-sendTicker.C:
-			mc.sendMetrics()
+			mc.sendMetricsAsBatch()
 		case <-sigs:
 			break loop
 		}
@@ -162,6 +162,25 @@ func (mc *MetricCollector) sendMetrics() {
 	)
 }
 
+func (mc *MetricCollector) sendMetricsAsBatch() {
+	var req []models.Metrics
+
+	metrics := mc.repo.GetFields()
+
+	for _, m := range metrics {
+		req = append(req, m)
+	}
+
+	pCount := metrics["PollCounter"]
+	pCount.ID = "PollCount"
+	req = append(req, pCount)
+
+	err := deliverMetrics(req, mc.reportHost)
+	if err != nil {
+		logger.Error("failed to send batch", zap.Error(err))
+	}
+}
+
 func deliverMetric(metric models.Metrics, reportHost string) error {
 	b, err := json.Marshal(metric)
 	if err != nil {
@@ -195,6 +214,49 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 			)
 		}
 	}()
+
+	return nil
+}
+
+func deliverMetrics(metrics []models.Metrics, reportHost string) error {
+	if len(metrics) == 0 {
+		return nil
+	}
+
+	b, err := json.Marshal(metrics)
+	if err != nil {
+		return fmt.Errorf("failed to marshal data: %w", err)
+	}
+
+	b, err = zip.GzipCompress(b)
+	if err != nil {
+		return fmt.Errorf("failed to compress data: %w", err)
+	}
+
+	r := bytes.NewReader(b)
+
+	url := fmt.Sprintf("http://%s/updates/", reportHost)
+	req, err := http.NewRequest(http.MethodPost, url, r)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Encoding", "gzip")
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send request: %w", err)
+	}
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			logger.Error("failed to close response body", zap.Error(cerr))
+		}
+	}()
+
+	// Опционально: проверяем код ответа
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("unexpected status code from /updates/: %s", resp.Status)
+	}
 
 	return nil
 }
