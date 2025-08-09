@@ -43,11 +43,11 @@ func (ms *MetricServer) Start() {
 	if cfg.DSN == "" {
 		flag.StringVar(&cfg.DSN, "d", "postgres://user:1234@postgres:5432/metric_db", "Параметры подключения к базе даннных")
 	}
+	if cfg.MigrationPath == "" {
+		flag.StringVar(&cfg.MigrationPath, "m", "migrations", "Путь к фалам миграции")
+	}
 	if !cfg.Restore {
 		flag.BoolVar(&cfg.Restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
-	}
-	if cfg.FileStoragePath == "" {
-		flag.StringVar(&cfg.MigrationPath, "m", "migrations", "Путь к фалам миграции")
 	}
 	flag.Parse()
 
