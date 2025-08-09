@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"metricapp/internal/logger"
@@ -95,8 +96,8 @@ func (ms *MemStorage) ProcessMetric(metric struct {
 	return nil
 }
 
-func (ms *MemStorage) ProcessMultyMetrics(metrics []models.Metrics) error {
-	func() {
+func (ms *MemStorage) ProcessMultyMetrics(ctx context.Context, metrics []models.Metrics) error {
+	go func() {
 		ms.mu.Lock()
 		defer ms.mu.Unlock()
 
@@ -110,7 +111,7 @@ func (ms *MemStorage) ProcessMultyMetrics(metrics []models.Metrics) error {
 		}
 	}()
 
-	return nil
+	return InsertBatch(ctx, metrics)
 }
 
 func (ms *MemStorage) SetField(key string, value float64) {

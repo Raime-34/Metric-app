@@ -271,7 +271,7 @@ func (h *MetricHandler) UpdateMultyMetrics(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = repository.InsertBatch(r.Context(), metrics)
+	err = h.storage.ProcessMultyMetrics(r.Context(), metrics)
 	if err != nil {
 		logger.Error("failed to update m-metrics", zap.Error(err))
 		http.Error(w, "failed to update m-metrics", errInternal)
