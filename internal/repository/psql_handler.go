@@ -14,6 +14,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"
@@ -118,22 +119,38 @@ func Ping() error {
 	return psqlHandler.conn.Ping(ctx)
 }
 
-func UpdateGauge(key string, value float64) error {
+func UpdateGauge(key string, value float64, opt ...transactionInfo) error {
 	if psqlHandler == nil {
 		return ErrNoConnection
 	}
 
-	rows, err := psqlHandler.conn.Exec(context.Background(),
-		`INSERT INTO
-		metrics (id, mtype, value)
-		VALUES
-		  ($1, $2, $3)
-		ON CONFLICT (id, mtype) DO
-		UPDATE
-		SET
-  		value = EXCLUDED.value;`,
-		key, models.Gauge, value,
+	query := `INSERT INTO
+			metrics (id, mtype, value)
+			VALUES
+			($1, $2, $3)
+			ON CONFLICT (id) DO
+			UPDATE
+			SET
+			value = EXCLUDED.value;`
+
+	var (
+		rows pgconn.CommandTag
+		err  error
 	)
+
+	if len(opt) > 0 {
+		tInfo := opt[0]
+		rows, err = tInfo.tx.Exec(
+			tInfo.ctx,
+			query,
+			key, models.Gauge, value,
+		)
+	} else {
+		rows, err = psqlHandler.conn.Exec(context.Background(),
+			query,
+			key, models.Gauge, value,
+		)
+	}
 
 	if err != nil {
 		return fmt.Errorf("failed to make query: %w", err)
@@ -146,25 +163,70 @@ func UpdateGauge(key string, value float64) error {
 	return nil
 }
 
-func IncrementCounter(key string, delta int64) error {
+func IncrementCounter(key string, delta int64, opt ...transactionInfo) error {
 	if psqlHandler == nil {
 		return ErrNoConnection
 	}
 
-	rows, err := psqlHandler.conn.Exec(context.Background(),
-		`INSERT INTO public.metrics (id, mtype, delta)
+	const query = `INSERT INTO metrics (id, mtype, delta)
 		VALUES ($1, $2, $3)
-		ON CONFLICT (id)
-		DO UPDATE SET delta = metrics.delta + EXCLUDED.delta`,
-		key, models.Counter, delta,
+		ON CONFLICT (id) DO UPDATE
+		SET delta = metrics.delta + EXCLUDED.delta;`
+
+	var (
+		rows pgconn.CommandTag
+		err  error
 	)
+
+	if len(opt) > 0 {
+		tInfo := opt[0]
+		rows, err = tInfo.tx.Exec(tInfo.ctx, query, key, models.Counter, delta)
+	} else {
+		rows, err = psqlHandler.conn.Exec(context.Background(), query, key, models.Counter, delta)
+	}
 
 	if err != nil {
 		return fmt.Errorf("failed to update counter: %w", err)
 	}
-
 	if rows.RowsAffected() == 0 {
-		return fmt.Errorf("rows is not affected: %w", err)
+		return fmt.Errorf("rows is not affected")
+	}
+	return nil
+}
+
+type transactionInfo struct {
+	tx  pgx.Tx
+	ctx context.Context
+}
+
+func InsertBatch(ctx context.Context, metrics []models.Metrics) error {
+	tx, err := psqlHandler.conn.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	tInfo := transactionInfo{
+		tx:  tx,
+		ctx: ctx,
+	}
+
+	for _, m := range metrics {
+		var err error
+
+		switch m.MType {
+		case models.Gauge:
+			err = UpdateGauge(m.ID, *m.Value, tInfo)
+		case models.Counter:
+			err = IncrementCounter(m.ID, *m.Delta, tInfo)
+		}
+
+		if err != nil {
+			return fmt.Errorf("transaction aborted: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil

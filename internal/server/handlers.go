@@ -248,6 +248,37 @@ func (h *MetricHandler) UpdateMetricWJSONv2(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+func (h *MetricHandler) UpdateMultyMetrics(w http.ResponseWriter, r *http.Request) {
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, http.StatusText(errInternal), errInternal)
+		return
+	}
+	defer func() {
+		err := r.Body.Close()
+		if err != nil {
+			logger.Error(
+				"failed to close request body",
+				zap.Error(err),
+			)
+		}
+	}()
+
+	var metrics []models.Metrics
+	err = json.Unmarshal(b, &metrics)
+	if err != nil {
+		http.Error(w, "failed to parse data", errBadReq)
+		return
+	}
+
+	err = repository.InsertBatch(r.Context(), metrics)
+	if err != nil {
+		logger.Error("failed to update m-metrics", zap.Error(err))
+		http.Error(w, "failed to update m-metrics", errInternal)
+		return
+	}
+}
+
 func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {

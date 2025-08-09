@@ -75,6 +75,7 @@ func (ms *MetricServer) Start() {
 		r.Get("/value/{mType}/{mName}", handler.GetMetric)
 
 		r.Post("/update/", handler.UpdateMetricWJSONv2)
+		r.Post("/updates/", handler.UpdateMultyMetrics)
 		r.Post("/value/", handler.GetMetricWJSONv2)
 
 		r.Get("/ping", handler.PingDB)

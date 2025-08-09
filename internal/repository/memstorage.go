@@ -95,6 +95,24 @@ func (ms *MemStorage) ProcessMetric(metric struct {
 	return nil
 }
 
+func (ms *MemStorage) ProcessMultyMetrics(metrics []models.Metrics) error {
+	func() {
+		ms.mu.Lock()
+		defer ms.mu.Unlock()
+
+		for _, m := range metrics {
+			switch m.MType {
+			case models.Gauge:
+				ms.storage[m.ID] = *m.Value
+			case models.Counter:
+				ms.counters[m.ID] += *m.Delta
+			}
+		}
+	}()
+
+	return nil
+}
+
 func (ms *MemStorage) SetField(key string, value float64) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
