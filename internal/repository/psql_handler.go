@@ -15,6 +15,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"
 )
 
@@ -48,7 +49,7 @@ func NewPsqlHandler(dsn string, mPath string) {
 			conn: conn,
 		}
 
-		err = migration(dsn, mPath)
+		err = migrationV2(dsn, mPath)
 		if err != nil {
 			logger.Error("failed to make migration", zap.Error(err))
 			return
@@ -80,6 +81,27 @@ func migration(dsn string, mPath string) error {
 	err = m.Up()
 	if err != nil {
 		return fmt.Errorf("failed to update scheme: %w", err)
+	}
+
+	return nil
+}
+
+// Миграция с помощью goose
+func migrationV2(dsn string, mPath string) error {
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		return fmt.Errorf("failed to connect for migration: %w", err)
+	}
+	defer db.Close()
+
+	// goose.SetBaseFS(embedMigrations)
+
+	if err := goose.SetDialect("postgres"); err != nil {
+		return fmt.Errorf("failed to set dialect: %w", err)
+	}
+
+	if err := goose.Up(db, mPath); err != nil {
+		return fmt.Errorf("failed to update sceme: %w", err)
 	}
 
 	return nil
