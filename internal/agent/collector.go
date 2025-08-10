@@ -9,6 +9,7 @@ import (
 	"metricapp/internal/logger"
 	models "metricapp/internal/model"
 	"metricapp/internal/repository"
+	"metricapp/internal/utils"
 	"metricapp/internal/zip"
 	"net/http"
 	"os"
@@ -175,7 +176,10 @@ func (mc *MetricCollector) sendMetricsAsBatch() {
 	pCount.ID = "PollCount"
 	req = append(req, pCount)
 
-	err := deliverMetrics(req, mc.reportHost)
+	err := utils.WithRetry(func() error {
+		return deliverMetrics(req, mc.reportHost)
+	})
+
 	if err != nil {
 		logger.Error("failed to send batch", zap.Error(err))
 	}

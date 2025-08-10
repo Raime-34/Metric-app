@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"metricapp/internal/logger"
 	models "metricapp/internal/model"
+	"metricapp/internal/utils"
 	"strconv"
 	"strings"
 	"sync"
@@ -111,7 +112,9 @@ func (ms *MemStorage) ProcessMultyMetrics(ctx context.Context, metrics []models.
 		}
 	}()
 
-	return InsertBatch(ctx, metrics)
+	return utils.WithRetry(func() error {
+		return InsertBatch(ctx, metrics)
+	})
 }
 
 func (ms *MemStorage) SetField(key string, value float64) {
@@ -119,7 +122,9 @@ func (ms *MemStorage) SetField(key string, value float64) {
 	defer ms.mu.Unlock()
 	ms.storage[key] = value
 
-	err := UpdateGauge(key, value)
+	err := utils.WithRetry(func() error {
+		return UpdateGauge(key, value)
+	})
 	if err != nil {
 		logger.Error(
 			"failed to UPDATE GAUGE in db",
@@ -205,7 +210,9 @@ func (ms *MemStorage) IncrementCounter(n ...struct {
 	delta := n[0].Delta
 	ms.counters[n[0].Name] = ms.counters[key] + delta
 
-	err := IncrementCounter(key, delta)
+	err := utils.WithRetry(func() error {
+		return IncrementCounter(key, delta)
+	})
 	if err != nil {
 		logger.Error(
 			"failed to INCREMENT COUNTER in db",
