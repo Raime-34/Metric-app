@@ -2,18 +2,17 @@ package server
 
 import (
 	"compress/gzip"
-	"flag"
 	"log"
 	"metricapp/internal/filemanager"
 	"metricapp/internal/logger"
 	"metricapp/internal/repository"
+	"metricapp/internal/server/cfg"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/caarlos0/env"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
@@ -21,47 +20,16 @@ import (
 type MetricServer struct{}
 
 func (ms *MetricServer) Start() {
-	var cfg struct {
-		Address         string `env:"ADDRESS"`
-		StoreInterval   int    `env:"STORE_INTERVAL"`
-		FileStoragePath string `env:"FILE_STORAGE_PATH"`
-		Restore         bool   `env:"RESTORE"`
-		DSN             string `env:"DATABASE_DSN"`
-		MigrationPath   string `env:"MIGRATION_PATH"`
-	}
-	env.Parse(&cfg)
-
-	if cfg.Address == "" {
-		flag.StringVar(&cfg.Address, "a", "0.0.0.0:8080", "Порт на котором будет поднят сервер")
-	}
-	if cfg.StoreInterval == 0 {
-		flag.IntVar(&cfg.StoreInterval, "i", 300, "Интервал записи метрик в файл")
-	}
-	if cfg.FileStoragePath == "" {
-		flag.StringVar(&cfg.FileStoragePath, "f", "./metrics.log", "Путь к файлу с сохраненными метрика")
-	}
-	if cfg.DSN == "" {
-		flag.StringVar(&cfg.DSN, "d", "postgres://user:1234@postgres:5432/metric_db", "Параметры подключения к базе даннных")
-	}
-	if cfg.MigrationPath == "" {
-		flag.StringVar(&cfg.MigrationPath, "m", "migrations", "Путь к фалам миграции")
-	}
-	var restore bool
-	flag.BoolVar(&restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
-	if !cfg.Restore {
-		cfg.Restore = restore
-	}
-	flag.Parse()
-
+	cfg.LoadConfig()
 	logger.InitLogger()
 
-	repository.NewPsqlHandler(cfg.DSN, cfg.MigrationPath)
+	repository.NewPsqlHandler(cfg.Cfg.DSN, cfg.Cfg.MigrationPath)
 
-	fm, err := filemanager.Open(cfg.FileStoragePath, cfg.StoreInterval)
+	fm, err := filemanager.Open(cfg.Cfg.FileStoragePath, cfg.Cfg.StoreInterval)
 	if err != nil {
 		log.Fatal("failed to open log file: ", err)
 	}
-	handler := NewMetricHandlerWfm(fm, cfg.Restore)
+	handler := NewMetricHandlerWfm(fm, cfg.Cfg.Restore)
 
 	router := chi.NewRouter()
 	router.Use(gzipHandler)
@@ -85,10 +53,10 @@ func (ms *MetricServer) Start() {
 
 	logger.Info(
 		"Start listening",
-		zap.String("port", cfg.Address),
+		zap.String("port", cfg.Cfg.Address),
 	)
 
-	go http.ListenAndServe(cfg.Address, router)
+	go http.ListenAndServe(cfg.Cfg.Address, router)
 	defer fm.Close()
 
 	sigs := make(chan os.Signal, 1)

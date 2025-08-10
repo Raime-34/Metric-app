@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"metricapp/internal/logger"
 	models "metricapp/internal/model"
+	"metricapp/internal/server/cfg"
 	"metricapp/internal/utils"
 	"strconv"
 	"strings"
@@ -112,6 +113,9 @@ func (ms *MemStorage) ProcessMultyMetrics(ctx context.Context, metrics []models.
 		}
 	}()
 
+	if cfg.Cfg.DSN == "" {
+		return nil
+	}
 	return utils.WithRetry(func() error {
 		return InsertBatch(ctx, metrics)
 	})
@@ -122,6 +126,9 @@ func (ms *MemStorage) SetField(key string, value float64) {
 	defer ms.mu.Unlock()
 	ms.storage[key] = value
 
+	if cfg.Cfg.DSN == "" {
+		return
+	}
 	err := utils.WithRetry(func() error {
 		return UpdateGauge(key, value)
 	})
@@ -210,6 +217,9 @@ func (ms *MemStorage) IncrementCounter(n ...struct {
 	delta := n[0].Delta
 	ms.counters[n[0].Name] = ms.counters[key] + delta
 
+	if cfg.Cfg.DSN == "" {
+		return
+	}
 	err := utils.WithRetry(func() error {
 		return IncrementCounter(key, delta)
 	})
