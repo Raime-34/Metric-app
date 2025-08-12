@@ -10,8 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -50,7 +48,7 @@ func NewPsqlHandler(dsn string, mPath string) {
 			conn: conn,
 		}
 
-		err = migrationV2(dsn, mPath)
+		err = migration(dsn, mPath)
 		if err != nil {
 			logger.Error("failed to make migration", zap.Error(err))
 			return
@@ -58,37 +56,8 @@ func NewPsqlHandler(dsn string, mPath string) {
 	})
 }
 
-func migration(dsn string, mPath string) error {
-	c, err := sql.Open("pgx", dsn)
-	if err != nil {
-		return fmt.Errorf("failed to connect for migration: %w", err)
-	}
-
-	conn, err := c.Conn(context.Background())
-	if err != nil {
-		return fmt.Errorf("failed to connect to db: %w", err)
-	}
-
-	driver, err := postgres.WithConnection(context.Background(), conn, &postgres.Config{})
-	if err != nil {
-		return fmt.Errorf("failed to create driver: %w", err)
-	}
-
-	m, err := migrate.NewWithDatabaseInstance(fmt.Sprintf("file:///%s", mPath), "postgres", driver)
-	if err != nil {
-		return fmt.Errorf("failed to create migration instance: %w", err)
-	}
-
-	err = m.Up()
-	if err != nil {
-		return fmt.Errorf("failed to update scheme: %w", err)
-	}
-
-	return nil
-}
-
 // Миграция с помощью goose
-func migrationV2(dsn string, mPath string) error {
+func migration(dsn string, mPath string) error {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return fmt.Errorf("failed to connect for migration: %w", err)
