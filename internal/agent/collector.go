@@ -223,10 +223,6 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 }
 
 func deliverMetrics(metrics []models.Metrics, reportHost string) error {
-	if len(metrics) == 0 {
-		return nil
-	}
-
 	b, err := json.Marshal(metrics)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
