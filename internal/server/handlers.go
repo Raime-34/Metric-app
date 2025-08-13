@@ -276,11 +276,6 @@ func (h *MetricHandler) UpdateMultyMetrics(w http.ResponseWriter, r *http.Reques
 	}
 
 	h.storage.ProcessMultyMetrics(metrics)
-	if err != nil {
-		logger.Error("failed to update m-metrics", zap.Error(err))
-		http.Error(w, "failed to update m-metrics", errInternal)
-		return
-	}
 }
 
 func (h *MetricHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
@@ -384,5 +379,4 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 
 func (h *MetricHandler) PingDB(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Error: database is not responding", errInternal)
-	return
 }
