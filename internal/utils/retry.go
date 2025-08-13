@@ -1,6 +1,10 @@
 package utils
 
-import "time"
+import (
+	"fmt"
+	"net/http"
+	"time"
+)
 
 var delays = []int{
 	1,
@@ -23,4 +27,28 @@ func WithRetry(f func() error) error {
 	}
 
 	return err
+}
+
+type HttpClientWRetry struct {
+	client *http.Client
+}
+
+var DefaultClient = HttpClientWRetry{
+	client: http.DefaultClient,
+}
+
+func (c *HttpClientWRetry) Do(req *http.Request) (*http.Response, error) {
+	for i := 0; i <= len(delays); i++ {
+		if resp, err := c.client.Do(req); err == nil {
+			return resp, nil
+		}
+
+		if i == len(delays) {
+			break
+		}
+
+		time.Sleep(time.Duration(delays[i]) * time.Second)
+	}
+
+	return nil, fmt.Errorf("failed to make request after %d atempts", len(delays))
 }

@@ -176,9 +176,7 @@ func (mc *MetricCollector) sendMetricsAsBatch() {
 	pCount.ID = "PollCount"
 	req = append(req, pCount)
 
-	err := utils.WithRetry(func() error {
-		return deliverMetrics(req, mc.reportHost)
-	})
+	err := deliverMetrics(req, mc.reportHost)
 
 	if err != nil {
 		logger.Error("failed to send batch", zap.Error(err))
@@ -243,7 +241,7 @@ func deliverMetrics(metrics []models.Metrics, reportHost string) error {
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := utils.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
