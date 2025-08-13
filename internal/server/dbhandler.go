@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"metricapp/internal/logger"
 	models "metricapp/internal/model"
 	"metricapp/internal/repository"
@@ -163,11 +162,7 @@ func (h *DBHandler) UpdateMetricWJSONv2(w http.ResponseWriter, r *http.Request) 
 	}
 	defer r.Body.Close()
 
-	var metric struct {
-		ID    string `json:"id"`
-		Type  string `json:"type"`
-		Value any    `json:"value"`
-	}
+	var metric models.Metrics
 	err = json.Unmarshal(b, &metric)
 	if err != nil {
 		http.Error(w, http.StatusText(errBadReq), errBadReq)
@@ -178,26 +173,25 @@ func (h *DBHandler) UpdateMetricWJSONv2(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "value is nil", errBadReq)
 		return
 	}
-	switch metric.Type {
+	switch metric.MType {
 	case models.Gauge:
-		v := metric.Value.(float64)
-		err := repository.UpdateGauge(metric.ID, v)
+		v := metric.Value
+		err := repository.UpdateGauge(metric.ID, *v)
 		if err != nil {
 			http.Error(w, "filed to update GAUGE", errInternal)
 			return
 		}
 
 	case models.Counter:
-		v := metric.Value.(float64)
-		log.Println(v)
-		err := repository.IncrementCounter(metric.ID, int64(v))
+		v := metric.Delta
+		err := repository.IncrementCounter(metric.ID, *v)
 		if err != nil {
 			http.Error(w, "filed to update COUNTER", errInternal)
 			return
 		}
 
 	default:
-		http.Error(w, fmt.Sprintf("unknown metric type: %s", metric.Type), errBadReq)
+		http.Error(w, fmt.Sprintf("unknown metric type: %s", metric.MType), errBadReq)
 	}
 }
 
