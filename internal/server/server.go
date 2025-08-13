@@ -45,7 +45,7 @@ func (ms *MetricServer) Start() {
 	if cfg.Cfg.DSN == "" {
 		handler = NewMetricHandlerWfm(fm, cfg.Cfg.Restore)
 	} else {
-		handler = NewDbHandler(cfg.Cfg.DSN, cfg.Cfg.MigrationPath)
+		handler = NewDBHandler(cfg.Cfg.DSN, cfg.Cfg.MigrationPath)
 	}
 
 	router := chi.NewRouter()

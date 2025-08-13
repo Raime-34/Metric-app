@@ -16,15 +16,15 @@ import (
 )
 
 // Имело бы смысл засунуть psqlHandler в dbHandler, но пока оставлю пустым
-type DbHandler struct{}
+type DBHandler struct{}
 
-func NewDbHandler(dsn string, mPath string) *DbHandler {
+func NewDBHandler(dsn string, mPath string) *DBHandler {
 	repository.NewPsqlHandler(cfg.Cfg.DSN, cfg.Cfg.MigrationPath)
 
-	return &DbHandler{}
+	return &DBHandler{}
 }
 
-func (h *DbHandler) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
+func (h *DBHandler) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 	mType := chi.URLParam(r, "mType")
 	name := chi.URLParam(r, "mName")
 	value := chi.URLParam(r, "mValue")
@@ -59,7 +59,7 @@ func (h *DbHandler) UpdateMetrics(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (h *DbHandler) UpdateMultyMetrics(w http.ResponseWriter, r *http.Request) {
+func (h *DBHandler) UpdateMultyMetrics(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, http.StatusText(errInternal), errInternal)
@@ -94,7 +94,7 @@ func (h *DbHandler) UpdateMultyMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *DbHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
+func (h *DBHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
 	mType := chi.URLParam(r, "mType")
 	mName := chi.URLParam(r, "mName")
 
@@ -113,7 +113,7 @@ func (h *DbHandler) GetMetric(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func (h *DbHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Request) {
+func (h *DBHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, http.StatusText(errInternal), errInternal)
@@ -154,7 +154,7 @@ func (h *DbHandler) UpdateMetricsWJSON(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *DbHandler) UpdateMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
+func (h *DBHandler) UpdateMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, http.StatusText(errInternal), errInternal)
@@ -195,7 +195,7 @@ func (h *DbHandler) UpdateMetricWJSONv2(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (h *DbHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
+func (h *DBHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "error to read request body", http.StatusInternalServerError)
@@ -227,7 +227,7 @@ func (h *DbHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func (h *DbHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
+func (h *DBHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "error to read request body", http.StatusInternalServerError)
@@ -259,7 +259,7 @@ func (h *DbHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func (h *DbHandler) PingDB(w http.ResponseWriter, r *http.Request) {
+func (h *DBHandler) PingDB(w http.ResponseWriter, r *http.Request) {
 	err := repository.Ping()
 	if err != nil {
 		http.Error(w, "Error: database is not responding", errInternal)
@@ -267,10 +267,10 @@ func (h *DbHandler) PingDB(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *DbHandler) getStoreInterval() int {
+func (h *DBHandler) getStoreInterval() int {
 	return 1_000
 }
 
-func (h *DbHandler) GetStorage() *repository.MemStorage {
+func (h *DBHandler) GetStorage() *repository.MemStorage {
 	return nil
 }
