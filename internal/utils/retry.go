@@ -29,15 +29,15 @@ func WithRetry(f func() error) error {
 	return err
 }
 
-type HttpClientWRetry struct {
+type HTTPClientWRetry struct {
 	client *http.Client
 }
 
-var DefaultClient = HttpClientWRetry{
+var DefaultClient = HTTPClientWRetry{
 	client: http.DefaultClient,
 }
 
-func (c *HttpClientWRetry) Do(req *http.Request) (*http.Response, error) {
+func (c *HTTPClientWRetry) Do(req *http.Request) (*http.Response, error) {
 	for i := 0; i <= len(delays); i++ {
 		if resp, err := c.client.Do(req); err == nil {
 			return resp, nil
