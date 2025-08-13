@@ -19,6 +19,7 @@ services:
     restart: always
     environment:
       MIGRATION_PATH: migrations
+      DATABASE_DSN: "postgres://user:1234@postgres:5432/metric_db?sslmode=disable"
     command: ["./server"]
     ports:
       - "8080:8080"
