@@ -13,6 +13,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"
@@ -28,24 +29,24 @@ var (
 )
 
 type PsqlHandler struct {
-	conn *pgx.Conn
+	pool *pgxpool.Pool
 }
 
 func NewPsqlHandler(dsn string, mPath string) {
 	once.Do(func() {
-		conn, err := pgx.Connect(context.Background(), dsn)
+		pool, err := pgxpool.New(context.Background(), dsn)
 		if err != nil {
 			logger.Error("failed to connect to db", zap.Error(err))
 			return
 		}
 
-		if err := conn.Ping(context.Background()); err != nil {
+		if err := pool.Ping(context.Background()); err != nil {
 			logger.Error("connection to db was not established", zap.Error(err))
 			return
 		}
 
 		psqlHandler = &PsqlHandler{
-			conn: conn,
+			pool: pool,
 		}
 
 		err = migration(dsn, mPath)
@@ -85,7 +86,7 @@ func Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	return psqlHandler.conn.Ping(ctx)
+	return psqlHandler.pool.Ping(ctx)
 }
 
 func UpdateGauge(key string, value float64, opt ...transactionInfo) error {
@@ -115,7 +116,7 @@ func UpdateGauge(key string, value float64, opt ...transactionInfo) error {
 			key, models.Gauge, value,
 		)
 	} else {
-		rows, err = psqlHandler.conn.Exec(context.Background(),
+		rows, err = psqlHandler.pool.Exec(context.Background(),
 			query,
 			key, models.Gauge, value,
 		)
@@ -151,7 +152,7 @@ func IncrementCounter(key string, delta int64, opt ...transactionInfo) error {
 		tInfo := opt[0]
 		rows, err = tInfo.tx.Exec(tInfo.ctx, query, key, models.Counter, delta)
 	} else {
-		rows, err = psqlHandler.conn.Exec(context.Background(), query, key, models.Counter, delta)
+		rows, err = psqlHandler.pool.Exec(context.Background(), query, key, models.Counter, delta)
 	}
 
 	if err != nil {
@@ -173,7 +174,7 @@ func InsertBatch(ctx context.Context, metrics []models.Metrics) error {
 		return ErrNoConnection
 	}
 
-	tx, err := psqlHandler.conn.Begin(ctx)
+	tx, err := psqlHandler.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to start transaction: %w", err)
 	}
