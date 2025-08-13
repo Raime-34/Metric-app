@@ -174,7 +174,10 @@ func (h *DBHandler) UpdateMetricWJSONv2(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	logger.Info("metric", zap.Any("data", metric))
+	if metric.Value == nil {
+		http.Error(w, "value is nil", errBadReq)
+		return
+	}
 	switch metric.Type {
 	case models.Gauge:
 		v := metric.Value.(float64)
