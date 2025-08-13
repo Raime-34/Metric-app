@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"metricapp/internal/logger"
 	models "metricapp/internal/model"
 	"metricapp/internal/utils"
@@ -241,14 +242,31 @@ func (h *PsqlHandler) Query(ctx context.Context, sql string, arguments ...any) (
 	return nil, fmt.Errorf("failed to make query after %d attempts", len(utils.Delays))
 }
 
-func (h *PsqlHandler) QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row {
+func (h *PsqlHandler) QueryRow(ctx context.Context, sql string, arguments ...any) (*models.Metrics, error) {
 	var row pgx.Row
+	var err error
 
 	for i := 0; i <= len(utils.Delays); i++ {
+		log.Println(i)
 		row = h.pool.QueryRow(ctx, sql, arguments...)
 
-		if err := row.Scan(); err == nil {
-			return row
+		var (
+			id    string
+			t     string
+			value *float64
+			delta *int64
+			hash  *string
+		)
+
+		if err = row.Scan(&id, &t, &delta, &value, &hash); err == nil {
+			return &models.Metrics{
+				ID:    id,
+				MType: t,
+				Delta: delta,
+				Value: value,
+			}, nil
+		} else {
+			logger.Error("failed to scan", zap.Error(err))
 		}
 
 		if i == len(utils.Delays) {
@@ -258,29 +276,9 @@ func (h *PsqlHandler) QueryRow(ctx context.Context, sql string, arguments ...any
 		time.Sleep(time.Duration(utils.Delays[i]) * time.Second)
 	}
 
-	return h.pool.QueryRow(ctx, sql, arguments...)
+	return &models.Metrics{}, fmt.Errorf("failed to make query: %w", err)
 }
 
 func QueryRow(ctx context.Context, mtype string, mName string) (*models.Metrics, error) {
-	row := psqlHandler.QueryRow(ctx, "SELECT * FROM metrics WHERE mtype = $1 AND id = $2", mtype, mName)
-
-	var (
-		id    string
-		t     string
-		value *float64
-		delta *int64
-		hash  *string
-	)
-
-	err := row.Scan(&id, &t, &delta, &value, &hash)
-	if err != nil {
-		return nil, fmt.Errorf("failed to scan data: %w", err)
-	}
-
-	return &models.Metrics{
-		ID:    id,
-		MType: t,
-		Delta: delta,
-		Value: value,
-	}, nil
+	return psqlHandler.QueryRow(ctx, "SELECT * FROM metrics WHERE mtype = $1 AND id = $2", mtype, mName)
 }
