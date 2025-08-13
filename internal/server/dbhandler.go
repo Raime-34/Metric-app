@@ -169,10 +169,6 @@ func (h *DBHandler) UpdateMetricWJSONv2(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if metric.Value == nil {
-		http.Error(w, "value is nil", errBadReq)
-		return
-	}
 	switch metric.MType {
 	case models.Gauge:
 		v := metric.Value
