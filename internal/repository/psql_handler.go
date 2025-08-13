@@ -262,13 +262,25 @@ func (h *PsqlHandler) QueryRow(ctx context.Context, sql string, arguments ...any
 }
 
 func QueryRow(ctx context.Context, mtype string, mName string) (*models.Metrics, error) {
-	row := psqlHandler.QueryRow(ctx, "SELECT * FROM metrics WHERE type = $1 AND name = $2", mtype, mName)
+	row := psqlHandler.QueryRow(ctx, "SELECT * FROM metrics WHERE mtype = $1 AND id = $2", mtype, mName)
 
-	var metric models.Metrics
-	err := row.Scan(&metric)
+	var (
+		id    string
+		t     string
+		value *float64
+		delta *int64
+		hash  *string
+	)
+
+	err := row.Scan(&id, &t, &delta, &value, &hash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan data: %w", err)
 	}
 
-	return &metric, nil
+	return &models.Metrics{
+		ID:    id,
+		MType: t,
+		Delta: delta,
+		Value: value,
+	}, nil
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"metricapp/internal/logger"
 	models "metricapp/internal/model"
 	"metricapp/internal/repository"
@@ -183,8 +184,9 @@ func (h *DBHandler) UpdateMetricWJSONv2(w http.ResponseWriter, r *http.Request) 
 		}
 
 	case models.Counter:
-		v := metric.Value.(int64)
-		err := repository.IncrementCounter(metric.ID, v)
+		v := metric.Value.(float64)
+		log.Println(v)
+		err := repository.IncrementCounter(metric.ID, int64(v))
 		if err != nil {
 			http.Error(w, "filed to update COUNTER", errInternal)
 			return
@@ -247,6 +249,7 @@ func (h *DBHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
 	metric, err := repository.QueryRow(r.Context(), payload.Type, payload.ID)
 	if err != nil {
 		http.Error(w, "failed get metric", errInternal)
+		logger.Error("failed to get metric", zap.Error(err))
 		return
 	}
 
