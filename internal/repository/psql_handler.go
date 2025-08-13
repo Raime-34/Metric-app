@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"metricapp/internal/logger"
 	models "metricapp/internal/model"
+	"metricapp/internal/utils"
 	"sync"
 	"time"
 
@@ -116,7 +117,7 @@ func UpdateGauge(key string, value float64, opt ...transactionInfo) error {
 			key, models.Gauge, value,
 		)
 	} else {
-		rows, err = psqlHandler.pool.Exec(context.Background(),
+		rows, err = psqlHandler.Exec(context.Background(),
 			query,
 			key, models.Gauge, value,
 		)
@@ -152,7 +153,7 @@ func IncrementCounter(key string, delta int64, opt ...transactionInfo) error {
 		tInfo := opt[0]
 		rows, err = tInfo.tx.Exec(tInfo.ctx, query, key, models.Counter, delta)
 	} else {
-		rows, err = psqlHandler.pool.Exec(context.Background(), query, key, models.Counter, delta)
+		rows, err = psqlHandler.Exec(context.Background(), query, key, models.Counter, delta)
 	}
 
 	if err != nil {
@@ -204,4 +205,21 @@ func InsertBatch(ctx context.Context, metrics []models.Metrics) error {
 	}
 
 	return nil
+}
+
+func (h *PsqlHandler) Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error) {
+	for i := 0; i <= len(utils.Delays); i++ {
+		resp, err := h.pool.Exec(ctx, sql, arguments...)
+		if err == nil {
+			return resp, nil
+		}
+
+		if i == len(utils.Delays) {
+			break
+		}
+
+		time.Sleep(time.Duration(utils.Delays[i]) * time.Second)
+	}
+
+	return pgconn.CommandTag{}, fmt.Errorf("failed to make query after %d attempts", len(utils.Delays))
 }
