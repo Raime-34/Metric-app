@@ -242,7 +242,7 @@ func (h *DBHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
 
 	metric, err := repository.QueryRow(r.Context(), payload.Type, payload.ID)
 	if err != nil {
-		http.Error(w, "failed get metric", errInternal)
+		http.Error(w, "failed get metric", http.StatusNotFound)
 		logger.Error("failed to get metric", zap.Error(err))
 		return
 	}
