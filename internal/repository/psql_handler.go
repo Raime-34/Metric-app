@@ -223,3 +223,52 @@ func (h *PsqlHandler) Exec(ctx context.Context, sql string, arguments ...any) (p
 
 	return pgconn.CommandTag{}, fmt.Errorf("failed to make query after %d attempts", len(utils.Delays))
 }
+
+func (h *PsqlHandler) Query(ctx context.Context, sql string, arguments ...any) (pgx.Rows, error) {
+	for i := 0; i <= len(utils.Delays); i++ {
+		rows, err := h.pool.Query(ctx, sql, arguments...)
+		if err == nil {
+			return rows, nil
+		}
+
+		if i == len(utils.Delays) {
+			break
+		}
+
+		time.Sleep(time.Duration(utils.Delays[i]) * time.Second)
+	}
+
+	return nil, fmt.Errorf("failed to make query after %d attempts", len(utils.Delays))
+}
+
+func (h *PsqlHandler) QueryRow(ctx context.Context, sql string, arguments ...any) pgx.Row {
+	var row pgx.Row
+
+	for i := 0; i <= len(utils.Delays); i++ {
+		row = h.pool.QueryRow(ctx, sql, arguments...)
+
+		if err := row.Scan(); err == nil {
+			return row
+		}
+
+		if i == len(utils.Delays) {
+			break
+		}
+
+		time.Sleep(time.Duration(utils.Delays[i]) * time.Second)
+	}
+
+	return h.pool.QueryRow(ctx, sql, arguments...)
+}
+
+func QueryRow(ctx context.Context, mtype string, mName string) (*models.Metrics, error) {
+	row := psqlHandler.QueryRow(ctx, "SELECT * FROM metrics WHERE type = $1 AND name = $2", mtype, mName)
+
+	var metric models.Metrics
+	err := row.Scan(&metric)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan data: %w", err)
+	}
+
+	return &metric, nil
+}

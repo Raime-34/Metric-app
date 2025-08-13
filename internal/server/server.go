@@ -19,17 +19,34 @@ import (
 
 type MetricServer struct{}
 
+type IHandler interface {
+	UpdateMetrics(http.ResponseWriter, *http.Request)
+	GetMetric(http.ResponseWriter, *http.Request)
+	UpdateMetricsWJSON(http.ResponseWriter, *http.Request)
+	UpdateMetricWJSONv2(http.ResponseWriter, *http.Request)
+	UpdateMultyMetrics(http.ResponseWriter, *http.Request)
+	GetMetricWJSON(http.ResponseWriter, *http.Request)
+	GetMetricWJSONv2(http.ResponseWriter, *http.Request)
+	PingDB(http.ResponseWriter, *http.Request)
+	getStoreInterval() int
+	GetStorage() *repository.MemStorage
+}
+
 func (ms *MetricServer) Start() {
 	cfg.LoadConfig()
 	logger.InitLogger()
-
-	repository.NewPsqlHandler(cfg.Cfg.DSN, cfg.Cfg.MigrationPath)
 
 	fm, err := filemanager.Open(cfg.Cfg.FileStoragePath, cfg.Cfg.StoreInterval)
 	if err != nil {
 		log.Fatal("failed to open log file: ", err)
 	}
-	handler := NewMetricHandlerWfm(fm, cfg.Cfg.Restore)
+
+	var handler IHandler
+	if cfg.Cfg.DSN == "" {
+		handler = NewMetricHandlerWfm(fm, cfg.Cfg.Restore)
+	} else {
+		handler = NewDbHandler(cfg.Cfg.DSN, cfg.Cfg.MigrationPath)
+	}
 
 	router := chi.NewRouter()
 	router.Use(gzipHandler)
@@ -71,9 +88,15 @@ outerLoop:
 	for {
 		select {
 		case <-tickerC:
-			fm.Write(handler.storage.GetAllMetrics())
+			s := handler.GetStorage()
+			if s != nil {
+				fm.Write(s.GetAllMetrics())
+			}
 		case <-sigs:
-			fm.Write(handler.storage.GetAllMetrics())
+			s := handler.GetStorage()
+			if s != nil {
+				fm.Write(s.GetAllMetrics())
+			}
 			logger.Info("exiting gracefully")
 			break outerLoop
 		}

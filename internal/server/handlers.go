@@ -52,6 +52,10 @@ func NewMetricHandlerWfm(fm *filemanager.FManager, restore bool) *MetricHandler 
 	return handler
 }
 
+func (h *MetricHandler) GetStorage() *repository.MemStorage {
+	return &h.storage
+}
+
 func NewMetricHandler() *MetricHandler {
 	return &MetricHandler{
 		storage: repository.NewMemStorage(),
@@ -271,7 +275,7 @@ func (h *MetricHandler) UpdateMultyMetrics(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = h.storage.ProcessMultyMetrics(r.Context(), metrics)
+	h.storage.ProcessMultyMetrics(metrics)
 	if err != nil {
 		logger.Error("failed to update m-metrics", zap.Error(err))
 		http.Error(w, "failed to update m-metrics", errInternal)
@@ -379,9 +383,6 @@ func (h *MetricHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *MetricHandler) PingDB(w http.ResponseWriter, r *http.Request) {
-	err := repository.Ping()
-	if err != nil {
-		http.Error(w, "Error: database is not responding", errInternal)
-		return
-	}
+	http.Error(w, "Error: database is not responding", errInternal)
+	return
 }

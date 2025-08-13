@@ -1,19 +1,13 @@
 package repository
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"metricapp/internal/logger"
 	models "metricapp/internal/model"
-	"metricapp/internal/server/cfg"
-	"metricapp/internal/utils"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
-
-	"go.uber.org/zap"
 )
 
 type MemStorage struct {
@@ -98,48 +92,24 @@ func (ms *MemStorage) ProcessMetric(metric struct {
 	return nil
 }
 
-func (ms *MemStorage) ProcessMultyMetrics(ctx context.Context, metrics []models.Metrics) error {
-	go func() {
-		ms.mu.Lock()
-		defer ms.mu.Unlock()
+func (ms *MemStorage) ProcessMultyMetrics(metrics []models.Metrics) {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
 
-		for _, m := range metrics {
-			switch m.MType {
-			case models.Gauge:
-				ms.storage[m.ID] = *m.Value
-			case models.Counter:
-				ms.counters[m.ID] += *m.Delta
-			}
+	for _, m := range metrics {
+		switch m.MType {
+		case models.Gauge:
+			ms.storage[m.ID] = *m.Value
+		case models.Counter:
+			ms.counters[m.ID] += *m.Delta
 		}
-	}()
-
-	if cfg.Cfg.DSN == "" {
-		return nil
 	}
-	return utils.WithRetry(func() error {
-		return InsertBatch(ctx, metrics)
-	})
 }
 
 func (ms *MemStorage) SetField(key string, value float64) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	ms.storage[key] = value
-
-	if cfg.Cfg.DSN == "" {
-		return
-	}
-	err := utils.WithRetry(func() error {
-		return UpdateGauge(key, value)
-	})
-	if err != nil {
-		logger.Error(
-			"failed to UPDATE GAUGE in db",
-			zap.String("id", key),
-			zap.Float64("value", value),
-			zap.Error(err),
-		)
-	}
 }
 
 func (ms *MemStorage) GetFields() map[string]float64 {
@@ -216,21 +186,6 @@ func (ms *MemStorage) IncrementCounter(n ...struct {
 	key := n[0].Name
 	delta := n[0].Delta
 	ms.counters[n[0].Name] = ms.counters[key] + delta
-
-	if cfg.Cfg.DSN == "" {
-		return
-	}
-	err := utils.WithRetry(func() error {
-		return IncrementCounter(key, delta)
-	})
-	if err != nil {
-		logger.Error(
-			"failed to INCREMENT COUNTER in db",
-			zap.String("id", key),
-			zap.Int64("value", delta),
-			zap.Error(err),
-		)
-	}
 }
 
 func (ms *MemStorage) GetCounter(name string) (counter int64, ok bool) {
