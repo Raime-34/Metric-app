@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"metricapp/internal/logger"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,6 +9,7 @@ import (
 )
 
 func TestMemStorage_SetField(t *testing.T) {
+	logger.InitLogger()
 	storage := NewMemStorage()
 
 	key := "Test"
@@ -18,6 +20,7 @@ func TestMemStorage_SetField(t *testing.T) {
 }
 
 func TestMemStorage_IncrementCounter(t *testing.T) {
+	logger.InitLogger()
 	storage := NewMemStorage()
 
 	var inc int64 = 10

@@ -36,11 +36,8 @@ func gzipHandler(next http.Handler) http.Handler {
 			w.Header().Set("Content-Encoding", "gzip")
 			gz := gzip.NewWriter(w)
 			defer func() {
-				err := gz.Close()
-				logger.Error(
-					"failed to close gzip writer",
-					zap.Error(err),
-				)
+				// Убрал спам логов
+				gz.Close()
 			}()
 			grw := gzipResponseWriter{ResponseWriter: w, Writer: gz}
 			next.ServeHTTP(grw, r)

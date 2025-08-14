@@ -2,53 +2,53 @@ package server
 
 import (
 	"compress/gzip"
-	"flag"
 	"log"
 	"metricapp/internal/filemanager"
 	"metricapp/internal/logger"
+	"metricapp/internal/repository"
+	"metricapp/internal/server/cfg"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/caarlos0/env"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
 type MetricServer struct{}
 
+type IHandler interface {
+	UpdateMetrics(http.ResponseWriter, *http.Request)
+	GetMetric(http.ResponseWriter, *http.Request)
+	UpdateMetricsWJSON(http.ResponseWriter, *http.Request)
+	UpdateMetricWJSONv2(http.ResponseWriter, *http.Request)
+	UpdateMultyMetrics(http.ResponseWriter, *http.Request)
+	GetMetricWJSON(http.ResponseWriter, *http.Request)
+	GetMetricWJSONv2(http.ResponseWriter, *http.Request)
+	PingDB(http.ResponseWriter, *http.Request)
+	getStoreInterval() int
+	GetStorage() *repository.MemStorage
+}
+
 func (ms *MetricServer) Start() {
-	var cfg struct {
-		Address         string `env:"ADDRESS"`
-		StoreInterval   int    `env:"STORE_INTERVAL"`
-		FileStoragePath string `env:"FILE_STORAGE_PATH"`
-		Restore         bool   `env:"RESTORE"`
-	}
-	env.Parse(&cfg)
-
-	if cfg.Address == "" {
-		flag.StringVar(&cfg.Address, "a", "0.0.0.0:8080", "Порт на котором будет поднят сервер")
-	}
-	if cfg.StoreInterval == 0 {
-		flag.IntVar(&cfg.StoreInterval, "i", 300, "Интервал записи метрик в файл")
-	}
-	if cfg.FileStoragePath == "" {
-		flag.StringVar(&cfg.FileStoragePath, "f", "./metrics.log", "Путь к файлу с сохраненными метрика")
-	}
-	if !cfg.Restore {
-		flag.BoolVar(&cfg.Restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
-	}
-	flag.Parse()
-
+	cfg.LoadConfig()
 	logger.InitLogger()
 
-	fm, err := filemanager.Open(cfg.FileStoragePath, cfg.StoreInterval)
+	fm, err := filemanager.Open(cfg.Cfg.FileStoragePath, cfg.Cfg.StoreInterval)
 	if err != nil {
 		log.Fatal("failed to open log file: ", err)
 	}
-	handler := NewMetricHandlerWfm(fm, cfg.Restore)
+
+	var handler IHandler
+	if cfg.Cfg.DSN == "" {
+		handler = NewMetricHandlerWfm(fm, cfg.Cfg.Restore)
+		logger.Info("file")
+	} else {
+		handler = NewDBHandler(cfg.Cfg.DSN, cfg.Cfg.MigrationPath)
+		logger.Info("db")
+	}
 
 	router := chi.NewRouter()
 	router.Use(gzipHandler)
@@ -63,16 +63,19 @@ func (ms *MetricServer) Start() {
 		r.Post("/update/{mType}/{mName}/{mValue}", handler.UpdateMetrics)
 		r.Get("/value/{mType}/{mName}", handler.GetMetric)
 
-		r.Post("/update/", handler.UpdateMetricsWJSONv2)
+		r.Post("/update/", handler.UpdateMetricWJSONv2)
+		r.Post("/updates/", handler.UpdateMultyMetrics)
 		r.Post("/value/", handler.GetMetricWJSONv2)
+
+		r.Get("/ping", handler.PingDB)
 	})
 
 	logger.Info(
 		"Start listening",
-		zap.String("port", cfg.Address),
+		zap.String("port", cfg.Cfg.Address),
 	)
 
-	go http.ListenAndServe(cfg.Address, router)
+	go http.ListenAndServe(cfg.Cfg.Address, router)
 	defer fm.Close()
 
 	sigs := make(chan os.Signal, 1)
@@ -87,9 +90,15 @@ outerLoop:
 	for {
 		select {
 		case <-tickerC:
-			fm.Write(handler.storage.GetAllMetrics())
+			s := handler.GetStorage()
+			if s != nil {
+				fm.Write(s.GetAllMetrics())
+			}
 		case <-sigs:
-			fm.Write(handler.storage.GetAllMetrics())
+			s := handler.GetStorage()
+			if s != nil {
+				fm.Write(s.GetAllMetrics())
+			}
 			logger.Info("exiting gracefully")
 			break outerLoop
 		}

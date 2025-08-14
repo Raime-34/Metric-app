@@ -1,12 +1,32 @@
 services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: metric_db
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   server:
     build: 
       dockerfile: ./cmd/server/Dockerfile
       context: .
     container_name: server
+    restart: always
+    environment:
+      MIGRATION_PATH: migrations
+      DATABASE_DSN: "postgres://user:1234@postgres:5432/metric_db?sslmode=disable"
     command: ["./server"]
     ports:
       - "8080:8080"
+    depends_on:
+      - postgres
+    volumes:
+      - ./migrations:/app/migrations
 
   agent:
     build: 
@@ -16,3 +36,6 @@ services:
     command: ["./agent", "-a", "server:8080"]
     depends_on:
       - server
+
+volumes:
+  db_data:

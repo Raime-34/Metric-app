@@ -84,11 +84,26 @@ func (ms *MemStorage) ProcessMetric(metric struct {
 			Name:  metric.ID,
 			Delta: v,
 		})
+
 	default:
 		return fmt.Errorf("unknown metric type: %s", metric.Type)
 	}
 
 	return nil
+}
+
+func (ms *MemStorage) ProcessMultyMetrics(metrics []models.Metrics) {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+
+	for _, m := range metrics {
+		switch m.MType {
+		case models.Gauge:
+			ms.storage[m.ID] = *m.Value
+		case models.Counter:
+			ms.counters[m.ID] += *m.Delta
+		}
+	}
 }
 
 func (ms *MemStorage) SetField(key string, value float64) {
@@ -168,7 +183,9 @@ func (ms *MemStorage) IncrementCounter(n ...struct {
 
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
-	ms.counters[n[0].Name] = ms.counters[n[0].Name] + n[0].Delta
+	key := n[0].Name
+	delta := n[0].Delta
+	ms.counters[n[0].Name] = ms.counters[key] + delta
 }
 
 func (ms *MemStorage) GetCounter(name string) (counter int64, ok bool) {
