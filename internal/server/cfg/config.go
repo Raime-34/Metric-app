@@ -15,6 +15,7 @@ type Config struct {
 	Restore         bool   `env:"RESTORE"`
 	DSN             string `env:"DATABASE_DSN"`
 	MigrationPath   string `env:"MIGRATION_PATH"`
+	Key             string `env:"KEY"`
 }
 
 func LoadConfig() {
@@ -34,6 +35,9 @@ func LoadConfig() {
 	}
 	if Cfg.MigrationPath == "" {
 		flag.StringVar(&Cfg.MigrationPath, "m", "migrations", "Путь к фалам миграции")
+	}
+	if Cfg.Key == "" {
+		flag.StringVar(&Cfg.Key, "k", "", "Ключ для хэширования")
 	}
 	var restore bool
 	flag.BoolVar(&restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
