@@ -43,7 +43,7 @@ func LoadConfig() {
 	flag.StringVar(&Cfg.Key, "k", Cfg.Key, "Ключ для хэширования")
 	flag.BoolVar(&Cfg.Restore, "r", Cfg.Restore, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
 
-	fmt.Printf("Флаги: %v", Cfg)
+	fmt.Printf("Флаги: %v\n", Cfg)
 	flag.Parse()
-	fmt.Printf("Флаги: %v", Cfg)
+	fmt.Printf("Флаги: %v\n", Cfg)
 }
