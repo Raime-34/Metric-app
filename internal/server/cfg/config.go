@@ -22,10 +22,18 @@ type Config struct {
 func LoadConfig() {
 	env.Parse(&Cfg)
 
-	Cfg.Address = "0.0.0.0:8080"
-	Cfg.StoreInterval = 300
-	Cfg.FileStoragePath = "./metrics.log"
-	Cfg.MigrationPath = "migrations"
+	if Cfg.Address == "" {
+		Cfg.Address = "0.0.0.0:8080"
+	}
+	if Cfg.StoreInterval == 0 {
+		Cfg.StoreInterval = 300
+	}
+	if Cfg.FileStoragePath == "" {
+		Cfg.FileStoragePath = "./metrics.log"
+	}
+	if Cfg.MigrationPath == "" {
+		Cfg.MigrationPath = "migrations"
+	}
 
 	flag.StringVar(&Cfg.Address, "a", Cfg.Address, "Порт на котором будет поднят сервер")
 	flag.IntVar(&Cfg.StoreInterval, "i", Cfg.StoreInterval, "Интервал записи метрик в файл")
