@@ -37,9 +37,10 @@ func LoadConfig() {
 	if Cfg.MigrationPath == "" {
 		flag.StringVar(&Cfg.MigrationPath, "m", "migrations", "Путь к фалам миграции")
 	}
-	if Cfg.Key == "" {
-		flag.StringVar(&Cfg.Key, "k", "", "Ключ для хэширования")
-	}
+	fmt.Println(Cfg.Key)
+	// if Cfg.Key == "" {
+	flag.StringVar(&Cfg.Key, "k", "", "Ключ для хэширования")
+	// }
 	fmt.Println(Cfg.Key)
 	var restore bool
 	flag.BoolVar(&restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
