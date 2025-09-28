@@ -20,6 +20,7 @@ services:
     environment:
       MIGRATION_PATH: migrations
       DATABASE_DSN: "postgres://user:1234@postgres:5432/metric_db?sslmode=disable"
+      KEY: "someKey"
     command: ["./server"]
     ports:
       - "8080:8080"
@@ -33,6 +34,8 @@ services:
       dockerfile: ./cmd/agent/Dockerfile
       context: .
     container_name: agent
+    environment:
+      KEY: "someKey"
     command: ["./agent", "-a", "server:8080"]
     depends_on:
       - server
