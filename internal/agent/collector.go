@@ -2,9 +2,6 @@ package agent
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -250,10 +247,7 @@ func deliverMetrics(metrics []models.Metrics, reportHost string, key string) err
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Content-Type", "application/json")
 	if key != "" {
-		mac := hmac.New(sha256.New, []byte(key))
-		mac.Write(b)
-		hash := hex.EncodeToString(mac.Sum(nil))
-		req.Header.Set("HashSHA256", hash)
+		req.Header.Set("HashSHA256", utils.CalculateHash(b))
 	}
 
 	resp, err := utils.DefaultClient.Do(req)

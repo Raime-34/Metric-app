@@ -3,13 +3,11 @@ package server
 import (
 	"bytes"
 	"compress/gzip"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"metricapp/internal/logger"
 	"metricapp/internal/server/cfg"
+	"metricapp/internal/utils"
 	"net/http"
 	"strings"
 	"time"
@@ -104,10 +102,7 @@ func hashChecker(next http.Handler) http.Handler {
 		if hash == "" {
 			next.ServeHTTP(w, r)
 		} else {
-			mac := hmac.New(sha256.New, []byte(cfg.Cfg.Key))
-			mac.Write(b)
-			calculatedHash := hex.EncodeToString(mac.Sum(nil))
-
+			calculatedHash := utils.CalculateHash(b)
 			if hash != calculatedHash {
 				http.Error(w, fmt.Sprintf("hash does not matched: %s and %s", hash, calculatedHash), http.StatusBadRequest)
 				logger.Error(
@@ -141,11 +136,7 @@ func setHash(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rec := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(rec, r)
-
-		mac := hmac.New(sha256.New, []byte(cfg.Cfg.Key))
-		mac.Write(rec.body.Bytes())
-		sig := hex.EncodeToString(mac.Sum(nil))
-
+		sig := utils.CalculateHash(rec.body.Bytes())
 		w.Header().Set("HashSHA256", sig)
 		w.WriteHeader(rec.status)
 		w.Write(rec.body.Bytes())
