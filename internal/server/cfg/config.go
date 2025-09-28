@@ -21,28 +21,14 @@ type Config struct {
 func LoadConfig() {
 	env.Parse(&Cfg)
 
-	if Cfg.Address == "" {
-		flag.StringVar(&Cfg.Address, "a", "0.0.0.0:8080", "Порт на котором будет поднят сервер")
-	}
-	if Cfg.StoreInterval == 0 {
-		flag.IntVar(&Cfg.StoreInterval, "i", 300, "Интервал записи метрик в файл")
-	}
-	if Cfg.FileStoragePath == "" {
-		flag.StringVar(&Cfg.FileStoragePath, "f", "./metrics.log", "Путь к файлу с сохраненными метрика")
-	}
-	if Cfg.DSN == "" {
-		flag.StringVar(&Cfg.DSN, "d", "", "Параметры подключения к базе даннных")
-	}
-	if Cfg.MigrationPath == "" {
-		flag.StringVar(&Cfg.MigrationPath, "m", "migrations", "Путь к фалам миграции")
-	}
-	// if Cfg.Key == "" {
-	flag.StringVar(&Cfg.Key, "k", "", "Ключ для хэширования")
-	// }
-	var restore bool
-	flag.BoolVar(&restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
-	if !Cfg.Restore {
-		Cfg.Restore = restore
-	}
+	// 2. зарегистрировали флаги, используя текущие значения как дефолт
+	flag.StringVar(&Cfg.Address, "a", Cfg.Address, "Порт на котором будет поднят сервер")
+	flag.IntVar(&Cfg.StoreInterval, "i", Cfg.StoreInterval, "Интервал записи метрик в файл")
+	flag.StringVar(&Cfg.FileStoragePath, "f", Cfg.FileStoragePath, "Путь к файлу с сохраненными метрика")
+	flag.StringVar(&Cfg.DSN, "d", Cfg.DSN, "Параметры подключения к базе данных")
+	flag.StringVar(&Cfg.MigrationPath, "m", Cfg.MigrationPath, "Путь к фалам миграции")
+	flag.StringVar(&Cfg.Key, "k", Cfg.Key, "Ключ для хэширования")
+	flag.BoolVar(&Cfg.Restore, "r", Cfg.Restore, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
+
 	flag.Parse()
 }
