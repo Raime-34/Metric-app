@@ -2,6 +2,9 @@ package agent
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -27,6 +30,7 @@ type MetricCollector struct {
 	reportInterval int
 	reportHost     string
 	repo           Repo[models.Metrics]
+	key            string
 }
 
 type Repo[T any] interface {
@@ -47,6 +51,7 @@ func NewCollector() *MetricCollector {
 		Address        string `env:"ADDRESS"`
 		ReportInterval int    `env:"REPORT_INTERVAL"`
 		PollInterval   int    `env:"POLL_INTERVAL"`
+		Key            string `env:"KEY"`
 	}
 
 	err := env.Parse(&cfg)
@@ -54,6 +59,7 @@ func NewCollector() *MetricCollector {
 		newCollector.reportHost = cfg.Address
 		newCollector.reportInterval = cfg.ReportInterval
 		newCollector.pollInterval = cfg.PollInterval
+		newCollector.key = cfg.Key
 	}
 
 	if newCollector.reportHost == "" {
@@ -64,6 +70,9 @@ func NewCollector() *MetricCollector {
 	}
 	if newCollector.reportInterval == 0 {
 		flag.IntVar(&newCollector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
+	}
+	if newCollector.key == "" {
+		flag.StringVar(&newCollector.key, "k", "", "Ключ для хэширования")
 	}
 
 	return &newCollector
@@ -176,7 +185,7 @@ func (mc *MetricCollector) sendMetricsAsBatch() {
 	pCount.ID = "PollCount"
 	req = append(req, pCount)
 
-	err := deliverMetrics(req, mc.reportHost)
+	err := deliverMetrics(req, mc.reportHost, mc.key)
 
 	if err != nil {
 		logger.Error("failed to send batch", zap.Error(err))
@@ -220,18 +229,18 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 	return nil
 }
 
-func deliverMetrics(metrics []models.Metrics, reportHost string) error {
+func deliverMetrics(metrics []models.Metrics, reportHost string, key string) error {
 	b, err := json.Marshal(metrics)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
 
-	b, err = zip.GzipCompress(b)
+	bCompressed, err := zip.GzipCompress(b)
 	if err != nil {
 		return fmt.Errorf("failed to compress data: %w", err)
 	}
 
-	r := bytes.NewReader(b)
+	r := bytes.NewReader(bCompressed)
 
 	url := fmt.Sprintf("http://%s/updates/", reportHost)
 	req, err := http.NewRequest(http.MethodPost, url, r)
@@ -240,6 +249,12 @@ func deliverMetrics(metrics []models.Metrics, reportHost string) error {
 	}
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Content-Type", "application/json")
+	if key != "" {
+		mac := hmac.New(sha256.New, []byte(key))
+		mac.Write(b)
+		hash := hex.EncodeToString(mac.Sum(nil))
+		req.Header.Set("HashSHA256", hash)
+	}
 
 	resp, err := utils.DefaultClient.Do(req)
 	if err != nil {
