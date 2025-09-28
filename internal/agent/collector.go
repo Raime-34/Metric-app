@@ -247,7 +247,7 @@ func deliverMetrics(metrics []models.Metrics, reportHost string, key string) err
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Content-Type", "application/json")
 	if key != "" {
-		req.Header.Set("HashSHA256", utils.CalculateHash(b))
+		req.Header.Set("HashSHA256", utils.CalculateHash(b, key))
 	}
 
 	resp, err := utils.DefaultClient.Do(req)

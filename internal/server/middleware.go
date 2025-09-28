@@ -102,7 +102,7 @@ func hashChecker(next http.Handler) http.Handler {
 		if hash == "" {
 			next.ServeHTTP(w, r)
 		} else {
-			calculatedHash := utils.CalculateHash(b)
+			calculatedHash := utils.CalculateHash(b, cfg.Cfg.Key)
 			if hash != calculatedHash {
 				http.Error(w, fmt.Sprintf("hash does not matched: %s and %s", hash, calculatedHash), http.StatusBadRequest)
 				logger.Error(
@@ -136,7 +136,7 @@ func setHash(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rec := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(rec, r)
-		sig := utils.CalculateHash(rec.body.Bytes())
+		sig := utils.CalculateHash(rec.body.Bytes(), cfg.Cfg.Key)
 		w.Header().Set("HashSHA256", sig)
 		w.WriteHeader(rec.status)
 		w.Write(rec.body.Bytes())
