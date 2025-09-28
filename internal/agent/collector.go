@@ -51,26 +51,36 @@ func NewCollector() *MetricCollector {
 		Key            string `env:"KEY"`
 	}
 
-	err := env.Parse(&cfg)
-	if err == nil {
+	_ = env.Parse(&cfg)
+
+	if cfg.Address != "" {
 		newCollector.reportHost = cfg.Address
+	} else {
+		newCollector.reportHost = "localhost:8080"
+	}
+
+	if cfg.ReportInterval != 0 {
 		newCollector.reportInterval = cfg.ReportInterval
+	} else {
+		newCollector.reportInterval = 10
+	}
+
+	if cfg.PollInterval != 0 {
 		newCollector.pollInterval = cfg.PollInterval
+	} else {
+		newCollector.pollInterval = 2
+	}
+
+	if cfg.Key != "" {
 		newCollector.key = cfg.Key
 	}
 
-	if newCollector.reportHost == "" {
-		flag.StringVar(&newCollector.reportHost, "a", "localhost:8080", "URL адрес сервера сбора метрик")
-	}
-	if newCollector.pollInterval == 0 {
-		flag.IntVar(&newCollector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
-	}
-	if newCollector.reportInterval == 0 {
-		flag.IntVar(&newCollector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
-	}
-	if newCollector.key == "" {
-		flag.StringVar(&newCollector.key, "k", "", "Ключ для хэширования")
-	}
+	flag.StringVar(&newCollector.reportHost, "a", newCollector.reportHost, "URL адрес сервера сбора метрик")
+	flag.IntVar(&newCollector.pollInterval, "p", newCollector.pollInterval, "Промежуток времени сбора метрик")
+	flag.IntVar(&newCollector.reportInterval, "r", newCollector.reportInterval, "Промежуток времени отправки данных на сервер")
+	flag.StringVar(&newCollector.key, "k", newCollector.key, "Ключ для хэширования")
+
+	flag.Parse()
 
 	return &newCollector
 }
