@@ -27,6 +27,7 @@ type MetricCollector struct {
 	reportInterval int
 	reportHost     string
 	repo           Repo[models.Metrics]
+	key            string
 }
 
 type Repo[T any] interface {
@@ -47,24 +48,40 @@ func NewCollector() *MetricCollector {
 		Address        string `env:"ADDRESS"`
 		ReportInterval int    `env:"REPORT_INTERVAL"`
 		PollInterval   int    `env:"POLL_INTERVAL"`
+		Key            string `env:"KEY"`
 	}
 
-	err := env.Parse(&cfg)
-	if err == nil {
+	_ = env.Parse(&cfg)
+
+	if cfg.Address != "" {
 		newCollector.reportHost = cfg.Address
-		newCollector.reportInterval = cfg.ReportInterval
-		newCollector.pollInterval = cfg.PollInterval
+	} else {
+		newCollector.reportHost = "localhost:8080"
 	}
 
-	if newCollector.reportHost == "" {
-		flag.StringVar(&newCollector.reportHost, "a", "localhost:8080", "URL адрес сервера сбора метрик")
+	if cfg.ReportInterval != 0 {
+		newCollector.reportInterval = cfg.ReportInterval
+	} else {
+		newCollector.reportInterval = 10
 	}
-	if newCollector.pollInterval == 0 {
-		flag.IntVar(&newCollector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
+
+	if cfg.PollInterval != 0 {
+		newCollector.pollInterval = cfg.PollInterval
+	} else {
+		newCollector.pollInterval = 2
 	}
-	if newCollector.reportInterval == 0 {
-		flag.IntVar(&newCollector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
+
+	if cfg.Key != "" {
+		newCollector.key = cfg.Key
 	}
+
+	flag.StringVar(&newCollector.reportHost, "a", newCollector.reportHost, "URL адрес сервера сбора метрик")
+	flag.IntVar(&newCollector.pollInterval, "p", newCollector.pollInterval, "Промежуток времени сбора метрик")
+	flag.IntVar(&newCollector.reportInterval, "r", newCollector.reportInterval, "Промежуток времени отправки данных на сервер")
+	flag.StringVar(&newCollector.key, "k", newCollector.key, "Ключ для хэширования")
+
+	flag.Parse()
+	fmt.Printf("Флаги клиента: %v\n", newCollector)
 
 	return &newCollector
 }
@@ -176,7 +193,7 @@ func (mc *MetricCollector) sendMetricsAsBatch() {
 	pCount.ID = "PollCount"
 	req = append(req, pCount)
 
-	err := deliverMetrics(req, mc.reportHost)
+	err := deliverMetrics(req, mc.reportHost, mc.key)
 
 	if err != nil {
 		logger.Error("failed to send batch", zap.Error(err))
@@ -220,18 +237,18 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 	return nil
 }
 
-func deliverMetrics(metrics []models.Metrics, reportHost string) error {
+func deliverMetrics(metrics []models.Metrics, reportHost string, key string) error {
 	b, err := json.Marshal(metrics)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
 
-	b, err = zip.GzipCompress(b)
+	bCompressed, err := zip.GzipCompress(b)
 	if err != nil {
 		return fmt.Errorf("failed to compress data: %w", err)
 	}
 
-	r := bytes.NewReader(b)
+	r := bytes.NewReader(bCompressed)
 
 	url := fmt.Sprintf("http://%s/updates/", reportHost)
 	req, err := http.NewRequest(http.MethodPost, url, r)
@@ -240,6 +257,9 @@ func deliverMetrics(metrics []models.Metrics, reportHost string) error {
 	}
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Content-Type", "application/json")
+	if key != "" {
+		req.Header.Set("HashSHA256", utils.CalculateHash(b, key))
+	}
 
 	resp, err := utils.DefaultClient.Do(req)
 	if err != nil {

@@ -1,8 +1,13 @@
 package server
 
 import (
+	"bytes"
 	"compress/gzip"
+	"fmt"
+	"io"
 	"metricapp/internal/logger"
+	"metricapp/internal/server/cfg"
+	"metricapp/internal/utils"
 	"net/http"
 	"strings"
 	"time"
@@ -78,4 +83,62 @@ func requestLogger(next http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(logFn)
+}
+
+func hashChecker(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if cfg.Cfg.Key == "" {
+			next.ServeHTTP(w, r)
+		}
+
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "failed to read body", http.StatusBadRequest)
+			return
+		}
+
+		r.Body = io.NopCloser(bytes.NewBuffer(b))
+		hash := r.Header.Get("HashSHA256")
+		if hash == "" {
+			next.ServeHTTP(w, r)
+		} else {
+			calculatedHash := utils.CalculateHash(b, cfg.Cfg.Key)
+			if hash != calculatedHash {
+				http.Error(w, fmt.Sprintf("hash does not matched: %s and %s", hash, calculatedHash), http.StatusBadRequest)
+				logger.Error(
+					"hashes does not matched",
+					zap.String("from request", hash),
+					zap.String("calculated", calculatedHash),
+				)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		}
+	})
+}
+
+type responseRecorder struct {
+	http.ResponseWriter
+	status int
+	body   bytes.Buffer
+}
+
+func (r *responseRecorder) WriteHeader(statusCode int) {
+	r.status = statusCode
+}
+
+func (r *responseRecorder) Write(b []byte) (int, error) {
+	return r.body.Write(b)
+}
+
+func setHash(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rec := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(rec, r)
+		sig := utils.CalculateHash(rec.body.Bytes(), cfg.Cfg.Key)
+		w.Header().Set("HashSHA256", sig)
+		w.WriteHeader(rec.status)
+		w.Write(rec.body.Bytes())
+	})
 }

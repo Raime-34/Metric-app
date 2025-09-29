@@ -52,7 +52,13 @@ func (ms *MetricServer) Start() {
 
 	router := chi.NewRouter()
 	router.Use(gzipHandler)
+	if cfg.Cfg.Key != "" {
+		router.Use(hashChecker)
+	}
 	router.Use(requestLogger)
+	if cfg.Cfg.Key != "" {
+		router.Use(setHash)
+	}
 
 	router.Route("/", func(r chi.Router) {
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {

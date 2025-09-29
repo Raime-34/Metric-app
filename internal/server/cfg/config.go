@@ -2,6 +2,7 @@ package cfg
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/caarlos0/env"
 )
@@ -15,30 +16,37 @@ type Config struct {
 	Restore         bool   `env:"RESTORE"`
 	DSN             string `env:"DATABASE_DSN"`
 	MigrationPath   string `env:"MIGRATION_PATH"`
+	Key             string `env:"KEY"`
 }
 
 func LoadConfig() {
 	env.Parse(&Cfg)
 
 	if Cfg.Address == "" {
-		flag.StringVar(&Cfg.Address, "a", "0.0.0.0:8080", "Порт на котором будет поднят сервер")
+		Cfg.Address = "0.0.0.0:8080"
 	}
 	if Cfg.StoreInterval == 0 {
-		flag.IntVar(&Cfg.StoreInterval, "i", 300, "Интервал записи метрик в файл")
+		Cfg.StoreInterval = 300
 	}
 	if Cfg.FileStoragePath == "" {
-		flag.StringVar(&Cfg.FileStoragePath, "f", "./metrics.log", "Путь к файлу с сохраненными метрика")
-	}
-	if Cfg.DSN == "" {
-		flag.StringVar(&Cfg.DSN, "d", "", "Параметры подключения к базе даннных")
+		Cfg.FileStoragePath = "./metrics.log"
 	}
 	if Cfg.MigrationPath == "" {
-		flag.StringVar(&Cfg.MigrationPath, "m", "migrations", "Путь к фалам миграции")
+		Cfg.MigrationPath = "migrations"
 	}
-	var restore bool
-	flag.BoolVar(&restore, "r", false, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
-	if !Cfg.Restore {
-		Cfg.Restore = restore
-	}
+
+	flag.StringVar(&Cfg.Address, "a", Cfg.Address, "Порт на котором будет поднят сервер")
+	flag.IntVar(&Cfg.StoreInterval, "i", Cfg.StoreInterval, "Интервал записи метрик в файл")
+	flag.StringVar(&Cfg.FileStoragePath, "f", Cfg.FileStoragePath, "Путь к файлу с сохраненными метрика")
+	flag.StringVar(&Cfg.DSN, "d", Cfg.DSN, "Параметры подключения к базе данных")
+	flag.StringVar(&Cfg.MigrationPath, "m", Cfg.MigrationPath, "Путь к фалам миграции")
+	var key string
+	flag.StringVar(&key, "k", Cfg.Key, "Ключ для хэширования")
+	flag.BoolVar(&Cfg.Restore, "r", Cfg.Restore, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
+
 	flag.Parse()
+	if Cfg.Key == "" {
+		Cfg.Key = key
+	}
+	fmt.Printf("Флаги сервера: %v\n", Cfg)
 }

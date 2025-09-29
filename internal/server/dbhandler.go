@@ -205,6 +205,7 @@ func (h *DBHandler) GetMetricWJSON(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.Unmarshal(b, &payload)
 	if err != nil {
+		logger.Error("failed to parse payload", zap.Error(err))
 		http.Error(w, "failed to parse payload", errBadReq)
 		return
 	}
@@ -238,6 +239,7 @@ func (h *DBHandler) GetMetricWJSONv2(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.Unmarshal(b, &payload)
 	if err != nil {
+		logger.Error("failed to parse payload", zap.Error(err))
 		http.Error(w, "failed to parse payload", errBadReq)
 		return
 	}
