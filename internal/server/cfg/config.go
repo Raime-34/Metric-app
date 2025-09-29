@@ -40,9 +40,13 @@ func LoadConfig() {
 	flag.StringVar(&Cfg.FileStoragePath, "f", Cfg.FileStoragePath, "Путь к файлу с сохраненными метрика")
 	flag.StringVar(&Cfg.DSN, "d", Cfg.DSN, "Параметры подключения к базе данных")
 	flag.StringVar(&Cfg.MigrationPath, "m", Cfg.MigrationPath, "Путь к фалам миграции")
-	flag.StringVar(&Cfg.Key, "k", Cfg.Key, "Ключ для хэширования")
+	var key string
+	flag.StringVar(&key, "k", Cfg.Key, "Ключ для хэширования")
 	flag.BoolVar(&Cfg.Restore, "r", Cfg.Restore, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
 
 	flag.Parse()
+	if Cfg.Key == "" {
+		Cfg.Key = key
+	}
 	fmt.Printf("Флаги сервера: %v\n", Cfg)
 }
