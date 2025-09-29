@@ -3,7 +3,6 @@ package cfg
 import (
 	"flag"
 	"fmt"
-	"metricapp/internal/logger"
 
 	"github.com/caarlos0/env"
 )
@@ -45,5 +44,5 @@ func LoadConfig() {
 	flag.BoolVar(&Cfg.Restore, "r", Cfg.Restore, "Флаг для загрузки сохраненных метрик с предыдущего сеанса")
 
 	flag.Parse()
-	logger.Info(fmt.Sprintf("Флаги сервера: %v\n", Cfg))
+	fmt.Printf("Флаги сервера: %v\n", Cfg)
 }

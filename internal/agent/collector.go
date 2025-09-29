@@ -81,7 +81,7 @@ func NewCollector() *MetricCollector {
 	flag.StringVar(&newCollector.key, "k", newCollector.key, "Ключ для хэширования")
 
 	flag.Parse()
-	logger.Info(fmt.Sprintf("Флаги клиента: %v\n", newCollector))
+	fmt.Printf("Флаги клиента: %v\n", newCollector)
 
 	return &newCollector
 }
