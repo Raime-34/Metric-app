@@ -92,7 +92,6 @@ func NewCollector() *MetricCollector {
 	flag.IntVar(&newCollector.rateLimit, "l", newCollector.rateLimit, "Максимальное количество единовременных запросов на сервер (0 - без ограничений)")
 
 	flag.Parse()
-	fmt.Printf("Флаги клиента: %v\n", newCollector)
 
 	return &newCollector
 }
