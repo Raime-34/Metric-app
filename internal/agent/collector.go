@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -15,18 +16,23 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/caarlos0/env/v11"
+	"github.com/shirou/gopsutil/v3/mem"
 	"go.uber.org/zap"
 )
 
 type MetricCollector struct {
+	mu             sync.Mutex
 	pollInterval   int
 	reportInterval int
 	reportHost     string
 	repo           Repo[models.Metrics]
+	key            string
+	rateLimit      int
 }
 
 type Repo[T any] interface {
@@ -47,24 +53,45 @@ func NewCollector() *MetricCollector {
 		Address        string `env:"ADDRESS"`
 		ReportInterval int    `env:"REPORT_INTERVAL"`
 		PollInterval   int    `env:"POLL_INTERVAL"`
+		Key            string `env:"KEY"`
+		RateLimit      int    `env:"RATE_LIMIT"`
 	}
 
-	err := env.Parse(&cfg)
-	if err == nil {
+	_ = env.Parse(&cfg)
+
+	if cfg.Address != "" {
 		newCollector.reportHost = cfg.Address
-		newCollector.reportInterval = cfg.ReportInterval
-		newCollector.pollInterval = cfg.PollInterval
+	} else {
+		newCollector.reportHost = "localhost:8080"
 	}
 
-	if newCollector.reportHost == "" {
-		flag.StringVar(&newCollector.reportHost, "a", "localhost:8080", "URL адрес сервера сбора метрик")
+	if cfg.ReportInterval != 0 {
+		newCollector.reportInterval = cfg.ReportInterval
+	} else {
+		newCollector.reportInterval = 10
 	}
-	if newCollector.pollInterval == 0 {
-		flag.IntVar(&newCollector.pollInterval, "p", 2, "Промежуток времени сбора метрик")
+
+	if cfg.PollInterval != 0 {
+		newCollector.pollInterval = cfg.PollInterval
+	} else {
+		newCollector.pollInterval = 2
 	}
-	if newCollector.reportInterval == 0 {
-		flag.IntVar(&newCollector.reportInterval, "r", 10, "Промежуток времени отправки данных на сервер")
+
+	if cfg.Key != "" {
+		newCollector.key = cfg.Key
 	}
+
+	if cfg.RateLimit != 0 {
+		newCollector.rateLimit = cfg.RateLimit
+	}
+
+	flag.StringVar(&newCollector.reportHost, "a", newCollector.reportHost, "URL адрес сервера сбора метрик")
+	flag.IntVar(&newCollector.pollInterval, "p", newCollector.pollInterval, "Промежуток времени сбора метрик")
+	flag.IntVar(&newCollector.reportInterval, "r", newCollector.reportInterval, "Промежуток времени отправки данных на сервер")
+	flag.StringVar(&newCollector.key, "k", newCollector.key, "Ключ для хэширования")
+	flag.IntVar(&newCollector.rateLimit, "l", newCollector.rateLimit, "Максимальное количество единовременных запросов на сервер (0 - без ограничений)")
+
+	flag.Parse()
 
 	return &newCollector
 }
@@ -96,7 +123,106 @@ loop:
 	}
 }
 
+func (mc *MetricCollector) Runv2() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	collectorCtx, cancel := context.WithCancel(context.Background())
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func(ctx context.Context) {
+		defer wg.Done()
+		ticker := time.NewTicker(time.Duration(mc.pollInterval) * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				mc.collect()
+			case <-ctx.Done():
+				return
+			}
+		}
+	}(collectorCtx)
+
+	wg.Add(1)
+	go func(ctx context.Context) {
+		defer wg.Done()
+		ticker := time.NewTicker(time.Duration(mc.pollInterval) * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				mc.collectAdditionalMetric()
+			case <-ctx.Done():
+				return
+			}
+		}
+	}(collectorCtx)
+
+	wg.Add(1)
+	go func(ctx context.Context) {
+		defer wg.Done()
+		ticker := time.NewTicker(time.Duration(mc.reportInterval) * time.Second)
+		defer ticker.Stop()
+
+		if mc.rateLimit > 0 {
+			sigChan := make(chan struct{}, mc.rateLimit)
+
+			for i := 0; i < mc.rateLimit; i++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					worker(sigChan, ctx, mc.sendMetricsAsBatch)
+				}()
+			}
+
+			for {
+				select {
+				case <-ticker.C:
+					select {
+					case sigChan <- struct{}{}:
+					case <-ctx.Done():
+						return
+					}
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+
+		for {
+			select {
+			case <-ticker.C:
+				mc.sendMetricsAsBatch()
+			case <-ctx.Done():
+				return
+			}
+		}
+	}(collectorCtx)
+
+	<-sigs
+	cancel()
+	wg.Wait()
+}
+
+func worker(signal <-chan struct{}, ctx context.Context, f func()) {
+	for {
+		select {
+		case <-signal:
+			f()
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
 func (mc *MetricCollector) collect() {
+	mc.mu.Lock()
+	defer mc.mu.Unlock()
+
 	var mStat runtime.MemStats
 	runtime.ReadMemStats(&mStat)
 
@@ -132,6 +258,16 @@ func (mc *MetricCollector) collect() {
 	mc.repo.IncrementCounter()
 }
 
+func (mc *MetricCollector) collectAdditionalMetric() {
+	mc.mu.Lock()
+	defer mc.mu.Unlock()
+
+	v, _ := mem.VirtualMemory()
+	mc.repo.SetField("TotalMemory", models.ComposeMetrics("TotalMemory", models.Gauge, float64(v.Total), 0))
+	mc.repo.SetField("FreeMemory", models.ComposeMetrics("FreeMemory", models.Gauge, float64(v.Free), 0))
+	mc.repo.SetField("CPUutilization1", models.ComposeMetrics("CPUutilization1", models.Gauge, 0, int64(runtime.GOMAXPROCS(0))))
+}
+
 func (mc *MetricCollector) sendMetrics() {
 	logger.Info("Sending data to server...")
 	metrics := mc.repo.GetFields()
@@ -164,6 +300,9 @@ func (mc *MetricCollector) sendMetrics() {
 }
 
 func (mc *MetricCollector) sendMetricsAsBatch() {
+	mc.mu.Lock()
+	defer mc.mu.Unlock()
+
 	var req []models.Metrics
 
 	metrics := mc.repo.GetFields()
@@ -176,7 +315,7 @@ func (mc *MetricCollector) sendMetricsAsBatch() {
 	pCount.ID = "PollCount"
 	req = append(req, pCount)
 
-	err := deliverMetrics(req, mc.reportHost)
+	err := deliverMetrics(req, mc.reportHost, mc.key)
 
 	if err != nil {
 		logger.Error("failed to send batch", zap.Error(err))
@@ -220,18 +359,18 @@ func deliverMetric(metric models.Metrics, reportHost string) error {
 	return nil
 }
 
-func deliverMetrics(metrics []models.Metrics, reportHost string) error {
+func deliverMetrics(metrics []models.Metrics, reportHost string, key string) error {
 	b, err := json.Marshal(metrics)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
 
-	b, err = zip.GzipCompress(b)
+	bCompressed, err := zip.GzipCompress(b)
 	if err != nil {
 		return fmt.Errorf("failed to compress data: %w", err)
 	}
 
-	r := bytes.NewReader(b)
+	r := bytes.NewReader(bCompressed)
 
 	url := fmt.Sprintf("http://%s/updates/", reportHost)
 	req, err := http.NewRequest(http.MethodPost, url, r)
@@ -240,6 +379,9 @@ func deliverMetrics(metrics []models.Metrics, reportHost string) error {
 	}
 	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Content-Type", "application/json")
+	if key != "" {
+		req.Header.Set("HashSHA256", utils.CalculateHash(b, key))
+	}
 
 	resp, err := utils.DefaultClient.Do(req)
 	if err != nil {

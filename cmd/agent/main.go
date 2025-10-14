@@ -12,5 +12,5 @@ func main() {
 	flag.Parse()
 
 	logger.Info("Starting metrics collection")
-	collector.Run()
+	collector.Runv2()
 }
